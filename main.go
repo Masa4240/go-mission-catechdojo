@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,9 +12,11 @@ import (
 	"time"
 
 	"github.com/Masa4240/go-mission-catechdojo/handler/router"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
+	fmt.Println("Start")
 	err := realMain()
 	if err != nil {
 		log.Fatalln("main: failed to exit successfully, err =", err)
@@ -26,10 +30,10 @@ func realMain() error {
 		//		defaultDBPath = ".sqlite3/todo.db"
 	)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
+	// port := os.Getenv("PORT")
+	// if port == "" {
+	// 	port = defaultPort
+	// }
 
 	// dbPath := os.Getenv("DB_PATH")
 	// if dbPath == "" {
@@ -42,16 +46,43 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
+	DBMS := "mysql"
+	USER := "root"
+	PASS := "root"
+	PROTOCOL := "tcp(ca-mission:3306)"
+	DBNAME := "ca_mission"
 
-	// set up sqlite3
-	// todoDB, err := db.NewDB(dbPath)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer todoDB.Close()
+	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME //+ "?charset=utf8&parseTime=true&loc=Asia%2FTokyo"
 
+	// set up mysql
+	userDB, err1 := sql.Open(DBMS, CONNECT)
+	defer userDB.Close()
+	err1 = userDB.Ping()
+
+	if err != nil {
+		fmt.Println("Fail to connect db")
+		fmt.Println(err)
+		time.Sleep(time.Second * 5)
+		fmt.Println("Try again to connect db")
+		userDB, err1 = sql.Open(DBMS, CONNECT)
+		err1 = userDB.Ping()
+		if err1 != nil {
+			fmt.Println("Fail to connect db")
+			fmt.Println(err1)
+		}
+
+		//return err
+	} else {
+		fmt.Println("db connection success")
+	}
+	result, err0 := userDB.Exec("INSERT INTO users(name, token) VALUES('hi1', 'hi1')")
+	if err0 != nil {
+		fmt.Println("Fail exec")
+		fmt.Println(err0)
+		fmt.Println(result)
+	}
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
-	mux := router.NewRouter()
+	mux := router.NewRouter(userDB)
 	//	mux := router.NewRouter(todoDB)
 
 	// TODO: サーバーをlistenする
@@ -61,16 +92,6 @@ func realMain() error {
 		Addr:    defaultPort,
 		Handler: mux,
 	}
-
-	//http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-	//     fmt.Fprintf(w, "Hello World")
-	// })\
-	//mux := http.NewServeMux()
-	//mux.HandleFunc("/hello", hello)
-	// err = srv.ListenAndServe()
-	// if err != http.ErrServerClosed {
-	// 	log.Fatalln("Server closed with error:", err)
-	// }
 
 	go func() {
 		log.Println("Go Routine")

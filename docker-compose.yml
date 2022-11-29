@@ -1,0 +1,43 @@
+version: '3'
+services:
+  go:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /bin/sh -c "go run main.go"
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app
+    ports:
+      - 8080:8080
+    
+    depends_on:
+      - "db"
+
+
+  db:
+    image: mysql:8.0
+    restart: always
+    hostname: mysql
+    container_name: ca-mission
+    environment:
+      #MYSQL_ROOT_PASSWORD: xxx
+      MYSQL_DATABASE: ca_mission
+      MYSQL_USER: ca-mission
+      # MYSQL_PASSWORD: xxx
+      # MYSQL_HOST: ca-mission
+      # TZ: 'Asia/Tokyo'
+      # POSTGRES_HOST_AUTH_METHOD: 'trust'
+      # POSTGRES_PASSWORD: 'postgres'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - 3306:3306
+
+
+volumes:
+  db-data:
+    driver: local

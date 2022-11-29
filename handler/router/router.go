@@ -1,17 +1,21 @@
 package router
 
 import (
+	"database/sql"
 	"net/http"
 
+	"github.com/Masa4240/go-mission-catechdojo/auth"
 	"github.com/Masa4240/go-mission-catechdojo/handler"
+	"github.com/Masa4240/go-mission-catechdojo/service"
 )
 
-func NewRouter() *http.ServeMux {
+func NewRouter(userDB *sql.DB) *http.ServeMux {
 	// register routes
 	mux := http.NewServeMux()
-	// svc := service.NewTODOService(todoDB)
+	svc := service.NewTODOService(userDB)
 	// mux.HandleFunc("/todos", handler.NewTODOHandler(svc).ServeHTTP)
-	//mux.HandleFunc("/do-panic", handler.NewPanicHandler().ServeHTTP)
+	mux.HandleFunc("/user/create", handler.NewUserHandler(svc).ServeHTTP)
+	mux.Handle("/auth", auth.GetTokenHandler)
 	// healthzHandler := handler.NewHealthzHandler()
 	// mux.HandleFunc("/healthz", healthzHandler.ServeHTTP)
 	healthzHandler := handler.NewHealthzHandler()
