@@ -55,10 +55,10 @@ func (h *UserHandler) Update(ctx context.Context, req *model.UserUpdateRequest) 
 
 // ServeHTTP implements http.Handler interface.
 func (h *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	println("user handler")
-	fmt.Println(r.URL)
-	fmt.Println(r.Header)
-	fmt.Println(r.Host)
+	fmt.Println("user handler Start")
+	// fmt.Println(r.URL)
+	// fmt.Println(r.Header)
+	// fmt.Println(r.Host)
 	if r.Method == "POST" && r.URL.String() == "/user/create" {
 		var req = model.UserResistrationRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -86,10 +86,12 @@ func (h *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//fmt.Fprintln(w, err, resp)
+		fmt.Println("Finish Create User process")
 		return
 	}
 	if r.Method == "GET" && r.URL.String() == "/user/get" {
 		//fmt.Println(r.Context().Value("name"))
+		fmt.Println("Start Get User process")
 		fmt.Println(r.Context().Value("id"))
 		var req = model.UserGetRequest{}
 		req.ID = r.Context().Value("id").(int64)
@@ -107,10 +109,12 @@ func (h *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//fmt.Fprintln(w, err, resp)
+		fmt.Println("Finish Get User process")
 		return
 
 	}
 	if r.Method == "PUT" && r.URL.String() == "/user/update" {
+		fmt.Println("Start Update User process")
 		var req = model.UserUpdateRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -135,6 +139,7 @@ func (h *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//fmt.Fprintln(w, err, resp)
+		fmt.Println("Finish Update User process")
 		return
 
 	}

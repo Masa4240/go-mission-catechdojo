@@ -89,14 +89,14 @@ func (s *UserService) CreateUser(ctx context.Context, new_name string) (*model.U
 	println(idnumber)
 	println(new_name)
 	if err != nil {
-		println("Err 1")
+		println("Fail to execute DB")
 		log.Fatal(err)
 	}
 
-	// 結果の取得
+	// Confirm the result
 	lastInsertID, err := res.LastInsertId()
 	if err != nil {
-		println("Err 2")
+		println("Fail to update db correctly")
 		log.Fatal(err)
 	}
 	fmt.Println(lastInsertID)
