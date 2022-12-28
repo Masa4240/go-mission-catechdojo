@@ -28,9 +28,6 @@ func (h *HealthzHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := enc.Encode(response); err != nil {
 		log.Println(err)
 	}
-	//time.Sleep(5 * time.Second)
-	println("Health handler done")
-	//middleware.AccessLogOutput(w, r)
 }
 
 func Handler(writer http.ResponseWriter, request *http.Request) {
