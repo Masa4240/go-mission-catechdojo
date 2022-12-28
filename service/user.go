@@ -2,185 +2,123 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"time"
 	"unicode/utf8"
 
 	"github.com/Masa4240/go-mission-catechdojo/model"
 	"github.com/form3tech-oss/jwt-go"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
+	"go.uber.org/zap"
 )
 
 type UserService struct {
-	db *sql.DB
+	db *gorm.DB
+}
+type userLists struct {
+	// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
+	gorm.Model
+	Name string
 }
 
-func NewUserService(db *sql.DB) *UserService {
+func NewUserService(db *gorm.DB) *UserService {
 	return &UserService{
 		db: db,
 	}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, new_name string) (*model.UserInfo, error) {
-	println("Start Create User Process")
-	fmt.Println(new_name)
-	rows, err := s.db.Query("SELECT * FROM userlist")
-	if err != nil {
-		fmt.Println("Err in query")
-		fmt.Println(err)
-	}
-	if utf8.RuneCountInString(new_name) > 10 {
-		fmt.Println("Too long name.")
-		err = errors.New("Invalid name")
+func (s *UserService) CreateUser(ctx context.Context, newName string) (*model.UserInfo, error) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	logger.Info("Start Create User Process", zap.Time("now", time.Now()), zap.String("new name is", newName))
+
+	if utf8.RuneCountInString(newName) > 10 {
+		logger.Info("Too long name.", zap.String("New name is", newName), zap.Time("now", time.Now()))
+		err := errors.New("Invalid name")
 		return nil, err
 	}
-	var name string
-	var id int
-	duplicateFlag := false
-	idnumber := 1
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(&id, &name)
-		//fmt.Println(name, tokken)
-		//fmt.Println(name == new_name)
-		if name == new_name {
-			duplicateFlag = true
-		}
-		if id >= idnumber {
-			idnumber = id + 1
-		}
-	}
-	if duplicateFlag {
-		fmt.Println("Provided user already exists. Try with another name")
-		err = errors.New("Duplicated request")
+
+	userList := userLists{}
+	if res := s.db.Table("user_lists").Find(&userList, "name=?", newName); res.Error == nil {
+		logger.Info("User name already exists", zap.Time("now", time.Now()), zap.String("Existing", newName), zap.Uint("ID number:", userList.ID))
+		err := errors.New("Duplicated Name")
 		return nil, err
 	}
-	//fmt.Println(duplicateFlag)
+	newUser := userLists{}
+	newUser.Name = newName
+	res := s.db.Create(&newUser)
+	if res.Error != nil {
+		logger.Info("Fail to update DB", zap.Time("now", time.Now()))
+		return nil, res.Error
+	}
+	if res.RowsAffected != 1 {
+		logger.Info("Fail to add new name to DB", zap.Time("now", time.Now()), zap.String("NewName is", newName), zap.Int64("Affected row", res.RowsAffected))
+		err := errors.New("Fail to create data to DB")
+		return nil, err
+	}
+
 	// Create Token
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	//claims["name"] = new_name
-	claims["id"] = idnumber
-
-	// Digital Signature
-	//	tokenString, _ := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+	claims["id"] = newUser.ID
 	tokenString, _ := token.SignedString([]byte("SIGNINGKEY"))
 	fmt.Println("Token generated")
 	fmt.Println(tokenString)
 	userinfo := model.UserInfo{
-		ID:    int64(idnumber),
-		Name:  new_name,
+		ID:    int64(newUser.ID),
+		Name:  newName,
 		Token: tokenString,
 	}
-	ins, err := s.db.Prepare("INSERT INTO userlist VALUES(?, ?)")
-	if err != nil {
-		println("Err prepare")
-		log.Fatal(err)
-		return nil, err
-	}
-	defer ins.Close()
-	//Duplication check
-
-	// Start to update DB
-	res, err := ins.Exec(idnumber, new_name)
-	println("Exec")
-	println(idnumber)
-	println(new_name)
-	if err != nil {
-		println("Fail to execute DB")
-		log.Fatal(err)
-	}
-
-	// Confirm the result
-	lastInsertID, err := res.LastInsertId()
-	if err != nil {
-		println("Fail to update db correctly")
-		log.Fatal(err)
-	}
-	fmt.Println(lastInsertID)
-	println("Finish create user process")
 	return &userinfo, nil
 }
 
-func (s *UserService) GetUser(ctx context.Context, reqID int) (*model.UserGetReponse, error) {
-	rows, err := s.db.Query("SELECT * FROM userlist")
-	if err != nil {
-		fmt.Println("Err in query")
-		fmt.Println(err)
-	}
-	var name string
-	var id int
-	returnName := ""
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(&id, &name)
-		if id == reqID {
-			returnName = name
-		}
-	}
-	if returnName == "" {
-		fmt.Println("INVALID Token")
-		err = errors.New("INVALID Token")
+func (s *UserService) GetUser(ctx context.Context, reqID int) (*model.UserGetResponse, error) {
+	userList := userLists{}
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	logger.Info("Start to get User name", zap.Time("now", time.Now()), zap.Int("Requested ID", reqID))
+	res := s.db.Table("user_lists").Find(&userList, "id=?", reqID)
+	if res.Error != nil {
+		logger.Info("ID not found", zap.Time("now", time.Now()), zap.Int("req ID", reqID), zap.Error(res.Error))
+		err := errors.New("ID Not Found")
 		return nil, err
 	}
-	res := model.UserGetReponse{
-		Name: returnName,
+	response := model.UserGetResponse{
+		Name: userList.Name,
 	}
-	return &res, nil
+	return &response, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, newname string, reqID int) (*model.UserGetReponse, error) {
-
-	//confirm token
-	rows, err := s.db.Query("SELECT * FROM userlist")
-	if err != nil {
-		fmt.Println("Err in query")
-		fmt.Println(err)
-	}
-	if utf8.RuneCountInString(newname) > 10 {
-		fmt.Println("Too long name.")
-		err = errors.New("Invalid name")
+func (s *UserService) UpdateUser(ctx context.Context, newName string, reqID int) (*model.UserGetResponse, error) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	if utf8.RuneCountInString(newName) > 10 {
+		logger.Info("Too long name", zap.Time("now", time.Now()), zap.String("New Name", newName), zap.Int("ID", reqID))
+		err := errors.New("Invalid name")
 		return nil, err
 	}
-
-	var name string
-	var id int
-	getUserStatus := false
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(&id, &name)
-		if name == newname {
-			return nil, errors.New("This name already exists")
-		}
-		if id == reqID {
-			getUserStatus = true
-			fmt.Println("Token ID found")
-		}
-	}
-	if !getUserStatus {
-		fmt.Println("INVALID Token")
-		err = errors.New("INVALID Token")
+	//Duplication check
+	userList := userLists{}
+	if res := s.db.Table("user_lists").Find(&userList, "name=?", newName); res.Error == nil {
+		logger.Info("User name already exists", zap.Time("now", time.Now()), zap.String("name", newName))
+		err := errors.New("Duplicated Name")
 		return nil, err
 	}
-	// update DB
-
-	upd, err := s.db.Prepare("UPDATE userlist SET name = ? WHERE userID = ?")
-	if err != nil {
-		fmt.Println("Fail in db preparation")
+	// //confirm token
+	if res := s.db.Table("user_lists").Where("id=?", reqID).Update("name", newName); res.Error != nil {
+		logger.Info("Fail to update DB", zap.Time("now", time.Now()), zap.String("name", newName), zap.Int("id", reqID), zap.Error(res.Error))
+		err := errors.New("Fail update DB")
 		return nil, err
 	}
-	result, err := upd.Exec(newname, reqID)
-	if err != nil {
+	if res := s.db.Where("id=?", reqID).Take(&userList); res.Error != nil {
+		logger.Info("Fail to confirm new DB", zap.Time("now", time.Now()), zap.String("name", newName), zap.Int("id", reqID))
+		fmt.Println("")
+		fmt.Println(res.Error)
+		err := errors.New("Fail to confirm new DB")
 		return nil, err
 	}
-	affected_rows, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if affected_rows == 0 {
-		return nil, errors.New("Update fail")
-	}
+	fmt.Println("user:", userList.Name, userList.ID)
 	return nil, nil
 }

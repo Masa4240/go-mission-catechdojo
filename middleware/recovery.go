@@ -13,8 +13,6 @@ func Recovery(h http.Handler) http.Handler {
 				fmt.Println("Recover: ", err)
 			}
 		}()
-		fmt.Println("Start Recovery middleware")
-		//panic("Panic!")
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
