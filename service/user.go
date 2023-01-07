@@ -48,6 +48,7 @@ func (s *UserService) CreateUser(ctx context.Context, newName string) (*model.Us
 	}
 	newUser := userLists{}
 	newUser.Name = newName
+	fmt.Println(newUser)
 	res := s.db.Create(&newUser)
 	if res.Error != nil {
 		logger.Info("Fail to update DB", zap.Time("now", time.Now()))

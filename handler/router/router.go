@@ -8,24 +8,12 @@ import (
 	"github.com/Masa4240/go-mission-catechdojo/service"
 
 	"github.com/go-chi/chi"
-	//"github.com/go-chi/chi/v5"
 	"github.com/jinzhu/gorm"
 )
 
 func NewRouter(userDB *gorm.DB) http.Handler {
-	//func NewRouter(userDB *gorm.DB) *http.ServeMux {
-	// register routes
-	// mux := http.NewServeMux()
-	// mux := chi.NewRouter()
-	// // mux.HandleFunc("/todos", handler.NewTODOHandler(svc).ServeHTTP)
-	// mux.Handle("/user/create", middleware.Recovery(userHandler))
-	// mux.Handle("/user/get", middleware.Recovery(middleware.TokenValidation(userHandler)))
-	// mux.Handle("/user/update", middleware.Recovery(middleware.TokenValidation(userHandler)))
-
-	healthzHandler := handler.NewHealthzHandler()
-	//mux.HandleFunc("/healthz", healthzHandler.ServeHTTP)
-
 	r := chi.NewRouter()
+
 	r.Use(middleware.Recovery)
 	svc := service.NewUserService(userDB)
 	userHandler := handler.NewUserHandler(svc)
@@ -39,7 +27,24 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 		})
 	})
 
+	healthzHandler := handler.NewHealthzHandler()
 	r.Get("/healthz", healthzHandler.ServeHTTP)
+
+	gsvc := service.NewGachaService(userDB)
+	gachaHandler := handler.NewGachaHandler(gsvc)
+	//r.Get("/gacha", gachaHandler.Gacha)
+	r.Route("/gacha", func(r chi.Router) {
+		r.Use(middleware.TokenValidation)
+		r.Post("/draw", gachaHandler.Gacha)
+	})
+
+	r.Route("/character", func(r chi.Router) {
+		r.Use(middleware.TokenValidation)
+		r.Get("/list", gachaHandler.GetCharsList)
+	})
+
+	// For admin Usage
+	r.Post("/char/add", gachaHandler.AddCharacter)
 
 	return r
 }

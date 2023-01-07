@@ -22,7 +22,7 @@ type (
 		ID int64 `json:"id"`
 	}
 
-	UserGetReponse struct {
+	UserGetResponse struct {
 		Name string `json:"name"`
 	}
 
