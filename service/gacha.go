@@ -65,9 +65,9 @@ func (s *GachaService) Gacha(ctx context.Context, id, count int) ([]model.GachaR
 	// Confirm table existance of target user. If no, create table for that user
 	if !s.db.HasTable(tableName) {
 		logger.Info("No target table. Start to create table", zap.Time("now", time.Now()), zap.String("table name", "charlists_userid_"+strconv.Itoa(id)))
-		if res := s.db.Table(tableName).AutoMigrate(&charLists{}); res.Error != nil {
-			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(res.Error))
-			return nil, res.Error
+		if err := s.db.Table(tableName).AutoMigrate(&charLists{}).Error; err != nil {
+			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(err))
+			return nil, err
 		}
 		logger.Info("Table creation done", zap.Time("now", time.Now()))
 	}
