@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -31,20 +30,17 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var resp = model.UserResistrationResponse{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "decode error")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if req.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "empty Name")
 		logger.Info("Empty name", zap.Time("now", time.Now()))
 		return
 	}
 	userinfo, err := h.svc.CreateUser(r.Context(), req.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
 		return
 	}
@@ -67,7 +63,6 @@ func (h *UserHandler) GetUserName(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("error in service", zap.Time("now", time.Now()))
-		fmt.Fprintln(w, err)
 		return
 	}
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
@@ -91,7 +86,6 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Newname == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "empty Name")
 		logger.Info("Empty name", zap.Time("now", time.Now()))
 		return
 	}
@@ -99,7 +93,6 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.svc.UpdateUser(r.Context(), req.Newname, int(req.ID)); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in service", zap.Time("now", time.Now()))
-		fmt.Fprintln(w, err)
 		return
 	}
 	logger.Info("Finish update User Process in handler", zap.Time("now", time.Now()))

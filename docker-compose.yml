@@ -4,14 +4,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: /bin/sh -c "go run main.go"
+    command: /bin/sh -c "go run main.go" #go buildでBinaryを実行したい
     stdin_open: true
     tty: true
     volumes:
       - .:/app
     ports:
       - 8080:8080
-    
     depends_on:
       - "db"
 
