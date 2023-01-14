@@ -42,6 +42,8 @@ func (h *GachaHandler) Gacha(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	//wのHeaderをapplication jsonにする必要がある
 	if err := json.NewEncoder(w).Encode(&res); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -63,6 +65,7 @@ func (h *GachaHandler) AddCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := h.svc.AddCharacter(r.Context(), req.Name, req.Rank, req.Desc, req.Weight)
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -86,6 +89,7 @@ func (h *GachaHandler) GetCharsList(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&res); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
