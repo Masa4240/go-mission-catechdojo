@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Masa4240/go-mission-catechdojo/handler/router"
+	"github.com/Masa4240/go-mission-catechdojo/service"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -52,6 +53,13 @@ func realMain() error {
 
 	if !userDB.HasTable("user_lists") {
 		logger.Info("No target table. Start to create table", zap.Time("now", time.Now()))
+		return nil
+	}
+
+	// Monster Lists
+
+	if err := service.NewGachaService(userDB).GetChars(); err != nil {
+		logger.Info("Fail to get master character list", zap.Time("now", time.Now()))
 		return nil
 	}
 

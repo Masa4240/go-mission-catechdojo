@@ -1,6 +1,17 @@
 package model
 
+import "github.com/jinzhu/gorm"
+
 type (
+	CharLists struct {
+		// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
+		gorm.Model
+		CharID int
+		Name   string
+		Rank   string
+		Weight int
+		//Level int
+	}
 	NewCharReq struct {
 		Name   string `json:"name"`
 		Rank   string `json:"rank"`

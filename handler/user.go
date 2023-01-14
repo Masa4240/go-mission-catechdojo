@@ -45,6 +45,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp.Token = userinfo.Token
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -65,6 +66,7 @@ func (h *UserHandler) GetUserName(w http.ResponseWriter, r *http.Request) {
 		logger.Info("error in service", zap.Time("now", time.Now()))
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

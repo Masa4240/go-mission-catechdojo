@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/Masa4240/go-mission-catechdojo/model"
@@ -21,6 +21,7 @@ type charLists struct {
 	// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
 	gorm.Model
 	CharID int
+	UserID int
 	Name   string
 	Rank   string
 	//Level int
@@ -31,15 +32,6 @@ type rankratio struct {
 	Weight    int
 }
 
-type rowCharLists struct {
-	// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
-	gorm.Model
-	CharID int
-	Name   string
-	Rank   string
-	Level  int
-}
-
 type formalcharLists struct {
 	// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
 	gorm.Model
@@ -48,6 +40,13 @@ type formalcharLists struct {
 	Weight int
 	Desc   string
 }
+
+type masterList struct {
+	list []formalcharLists
+}
+
+var srChars, rChars, nChars *[]model.CharLists
+var rankWeight [3]int
 
 func NewGachaService(db *gorm.DB) *GachaService {
 	return &GachaService{
@@ -60,57 +59,38 @@ func (s *GachaService) Gacha(ctx context.Context, id, count int) ([]model.GachaR
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
-	tableName := "charlists_userid_" + strconv.Itoa(id)
-
-	// Confirm table existance of target user. If no, create table for that user
-	if !s.db.HasTable(tableName) {
-		logger.Info("No target table. Start to create table", zap.Time("now", time.Now()), zap.String("table name", "charlists_userid_"+strconv.Itoa(id)))
-		if err := s.db.Table(tableName).AutoMigrate(&charLists{}).Error; err != nil {
-			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(err))
-			return nil, err
-		}
-		logger.Info("Table creation done", zap.Time("now", time.Now()))
-	}
+	tableName := "charlists_users"
 
 	// Monster Lists
-	srChars := s.getChars("SR")
-	rChars := s.getChars("R")
-	nChars := s.getChars("N")
-	// rank ratio
-	rankratio := rankratio{}
-	s.db.Table("rankratio").Where("ranklevel=?", "SR").Find(&rankratio)
-	srRatio := rankratio.Weight
-	s.db.Table("rankratio").Where("ranklevel=?", "R").Find(&rankratio)
-	rRatio := rankratio.Weight
-	s.db.Table("rankratio").Where("ranklevel=?", "N").Find(&rankratio)
-	nRatio := rankratio.Weight
+
+	srChars := *srChars
+	rChars := *rChars
+	nChars := *nChars
 
 	// Gacha
 	newChars := []charLists{}
 	newResChars := []model.GachaResponse{}
-
+	logger.Info("Gacha start", zap.Time("now", time.Now()))
 	for i := 0; i < count; i++ {
-		logger.Info("Gacha number", zap.Time("now", time.Now()), zap.Int("Gacha Counter", i))
 		rand.Seed(time.Now().UnixNano())
+		logger.Info("Gacha number", zap.Time("now", time.Now()), zap.Int("SR ratio", rankWeight[0]), zap.Int("R ratio", rankWeight[1]), zap.Int("N ratio", rankWeight[2]))
+		result := rand.Intn(rankWeight[0] + rankWeight[1] + rankWeight[2])
 
-		logger.Info("Gacha number", zap.Time("now", time.Now()), zap.Int("SR ratio", srRatio), zap.Int("R ratio", rRatio), zap.Int("N ratio", nRatio))
-
-		result := rand.Intn(srRatio + rRatio + nRatio)
-
-		if result < srRatio {
+		if result < rankWeight[0] {
 			rank := "SR"
-			newChars = charGacha(rank, srChars, newChars)
+			newChars = charGacha(id, rank, srChars, newChars)
 		}
-		if result >= srRatio && result < srRatio+rRatio {
+		if result >= rankWeight[0] && result < rankWeight[0]+rankWeight[1] {
 			rank := "R"
-			newChars = charGacha(rank, rChars, newChars)
+			newChars = charGacha(id, rank, rChars, newChars)
 		}
-		if result >= srRatio+rRatio {
+		if result >= rankWeight[0]+rankWeight[1] {
 			rank := "N"
-			newChars = charGacha(rank, nChars, newChars)
+			newChars = charGacha(id, rank, nChars, newChars)
 		}
 	}
 
+	logger.Info("Gacha Finish, Start registration", zap.Time("now", time.Now()))
 	// Register to user DB
 	for i := 0; i < len(newChars); i++ {
 		res := s.db.Table(tableName).Create(&newChars[i])
@@ -119,6 +99,7 @@ func (s *GachaService) Gacha(ctx context.Context, id, count int) ([]model.GachaR
 			return nil, res.Error
 		}
 	}
+	logger.Info("registration done", zap.Time("now", time.Now()))
 
 	newResChars = resConverter(newChars)
 
@@ -130,9 +111,9 @@ func (s *GachaService) GetCharsList(ctx context.Context, id int) ([]model.GachaR
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
-	tableName := "charlists_userid_" + strconv.Itoa(id)
+	tableName := "charlists_users"
 	charList := []charLists{}
-	if result := s.db.Table(tableName).Find(&charList); result.Error != nil {
+	if result := s.db.Table(tableName).Where("`user_id` = ?", id).Find(&charList); result.Error != nil {
 		logger.Info("Fail to get char list from db", zap.Time("now", time.Now()), zap.Error(result.Error))
 		return nil, result.Error
 	}
@@ -141,13 +122,14 @@ func (s *GachaService) GetCharsList(ctx context.Context, id int) ([]model.GachaR
 }
 
 //func charGacha(rank string, chars, newChars []charLists, newResChars []model.GachaResponse) ([]charLists, []model.GachaResponse) {
-func charGacha(rank string, chars, newChars []charLists) []charLists {
+func charGacha(id int, rank string, chars []model.CharLists, newChars []charLists) []charLists {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	newChar := charLists{}
 	char := chars[rand.Intn(len(chars))]
 	logger.Info("Char is", zap.Time("now", time.Now()), zap.String("Name", char.Name), zap.String("Rank", char.Rank), zap.Int("ID", char.CharID))
 	newChar.CharID = int(char.ID)
+	newChar.UserID = id
 	newChar.Name = char.Name
 	newChar.Rank = rank
 	newChars = append(newChars, newChar)
@@ -162,6 +144,7 @@ func resConverter(charList []charLists) []model.GachaResponse {
 		resChar.CharID = int(charList[i].CharID)
 		resChar.Name = charList[i].Name
 		resChars = append(resChars, resChar)
+
 	}
 	return resChars
 }
@@ -191,23 +174,85 @@ func (s *GachaService) AddCharacter(ctx context.Context, name, rank, desc string
 		err := errors.New("Fail to create data to DB")
 		return err
 	}
+	s.GetChars()
 	return nil
 }
 
-func (s *GachaService) getChars(rank string) []charLists {
+func (s *GachaService) GetChars() error {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
-	logger.Info("get character lists from db", zap.Time("now", time.Now()))
+	logger.Info("Get Master char lists", zap.Time("now", time.Now()))
 
-	charList := []charLists{}
-	rankChars := []charLists{}
+	masterChars := []model.CharLists{}
 
-	s.db.Table("formalchar_lists").Where("`rank` = ? AND weight = ?", rank, 1).Find(&rankChars)
-	charList = append(rankChars, charList...)
-	s.db.Table("formalchar_lists").Where("`rank` = ? AND weight = ?", rank, 2).Find(&rankChars)
-	charList = append(rankChars, charList...)
-	charList = append(rankChars, charList...)
+	if srChars != nil {
+		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
+		srChars = nil
+	}
+	if rChars != nil {
+		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
+		rChars = nil
+	}
+	if nChars != nil {
+		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
+		nChars = nil
+	}
 
-	logger.Info("Finish character lists from db", zap.Time("now", time.Now()), zap.String("rank", rank))
-	return charList
+	var srCharList, rCharList, nCharList []model.CharLists
+	s.db.Table("formalchar_lists").Find(&masterChars)
+	for i := 0; i < len(masterChars); i++ {
+		if masterChars[i].Rank == "SR" {
+			if masterChars[i].Weight == 1 {
+				srCharList = append(srCharList, masterChars[i])
+			}
+			if masterChars[i].Weight == 2 {
+				srCharList = append(srCharList, masterChars[i])
+				srCharList = append(srCharList, masterChars[i])
+			}
+		}
+		if masterChars[i].Rank == "R" {
+			if masterChars[i].Weight == 1 {
+				rCharList = append(rCharList, masterChars[i])
+			}
+			if masterChars[i].Weight == 2 {
+				rCharList = append(rCharList, masterChars[i])
+				rCharList = append(rCharList, masterChars[i])
+			}
+		}
+		if masterChars[i].Rank == "N" {
+			if masterChars[i].Weight == 1 {
+				nCharList = append(nCharList, masterChars[i])
+			}
+			if masterChars[i].Weight == 2 {
+				nCharList = append(nCharList, masterChars[i])
+				nCharList = append(nCharList, masterChars[i])
+			}
+		}
+	}
+
+	srChars = &srCharList
+	rChars = &rCharList
+	nChars = &nCharList
+
+	fmt.Println(srChars)
+	// rank ratio
+	rankRatio := []rankratio{}
+
+	if err := s.db.Table("rankratio").Find(&rankRatio).Error; err != nil {
+		logger.Info("Error to get Rank ratio", zap.Time("now", time.Now()), zap.Error(err))
+		return err
+	}
+	for i := 0; i < 3; i++ {
+		if rankRatio[i].Ranklevel == "SR" {
+			rankWeight[0] = rankRatio[i].Weight
+		}
+		if rankRatio[i].Ranklevel == "R" {
+			rankWeight[1] = rankRatio[i].Weight
+		}
+		if rankRatio[i].Ranklevel == "N" {
+			rankWeight[2] = rankRatio[i].Weight
+		}
+	}
+
+	return nil
 }
