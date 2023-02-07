@@ -41,8 +41,11 @@ func TokenValidation(h http.Handler) http.Handler {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		logger.Info("Decode Done", zap.Time("now", time.Now()), zap.String("Name", dectoken.Name), zap.Int64("ID", dectoken.ID))
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "id", dectoken.ID)))
+		logger.Info("Decode Done", zap.Time("now", time.Now()),
+			zap.String("Name", dectoken.Name), zap.Int64("ID", dectoken.ID))
+
+		id := "id"
+		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), id, dectoken.ID)))
 	}
 	return http.HandlerFunc(fn)
 }
@@ -53,7 +56,8 @@ func parse(signedString string) (*Auth, error) {
 
 	token, err := jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			//return "", err.Errorf("unexpected signing method: %v", token.Header["alg"])
+			logger.Info("Token Parse Failure", zap.Time("now", time.Now()))
+			// return "", err.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte("SIGNINGKEY"), nil
 	})

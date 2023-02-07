@@ -1,9 +1,9 @@
 package model
 
-type ErrDuplicatedRequest struct {
+type DuplicatedRequestError struct {
 	Message string `json:"message"`
 }
 
-func (e ErrDuplicatedRequest) Error() string {
+func (e DuplicatedRequestError) Error() string {
 	return e.Message
 }
