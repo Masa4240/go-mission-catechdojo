@@ -6,7 +6,6 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/go-chi/chi v1.5.4
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/jinzhu/copier v0.3.5
 	github.com/jinzhu/gorm v1.9.16
 	go.uber.org/zap v1.24.0
 

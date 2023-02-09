@@ -1,4 +1,6 @@
-package model
+package usermodel
+
+import "github.com/jinzhu/gorm"
 
 type (
 	UserInfo struct {
@@ -7,18 +9,24 @@ type (
 		Token string `json:"token"`
 	}
 
+	UserLists struct {
+		// gorm.Modelをつけると、idとCreatedAtとUpdatedAtとDeletedAtが作られる
+		gorm.Model
+		Name string
+	}
+
 	// A CreateTODORequest expresses ...
 	UserResistrationRequest struct {
 		Name string `json:"name"`
 	}
 
 	UserResistrationResponse struct {
-		//UserInfo `json:"userinfo"`
+		// UserInfo `json:"userinfo"`
 		Token string `json:"token"`
 	}
 
 	UserGetRequest struct {
-		//Name string `json:"name"`
+		// Name string `json:"name"`
 		ID int64 `json:"id"`
 	}
 
@@ -28,7 +36,7 @@ type (
 
 	UserUpdateRequest struct {
 		Newname string `json:"name"`
-		//Tokenname string `json:"tokenname"`
+		// Tokenname string `json:"tokenname"`
 		ID int64 `json:"id"`
 	}
 
