@@ -1,10 +1,11 @@
-package model
+package gachamodel
 
 import (
 	"context"
 	"errors"
 	"time"
 
+	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 )
@@ -19,24 +20,24 @@ func NewGachaModel(db *gorm.DB) *GachaModel {
 	}
 }
 
-func (s *GachaModel) GachaTableCheck(ctx context.Context) error {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
-	tableName := "characterlists_users"
-	if !s.db.HasTable(tableName) {
-		logger.Info("No target table. Start to create table",
-			zap.Time("now", time.Now()), zap.String("table name", tableName))
-		if res := s.db.Table(tableName).AutoMigrate(&UserCharacterList{}); res.Error != nil {
-			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(res.Error))
-			return res.Error
-		}
-		logger.Info("Table creation done", zap.Time("now", time.Now()))
-	}
-	return nil
-}
+// func (s *GachaModel) GachaTableCheck(ctx context.Context) error {
+// 	logger, _ := zap.NewProduction()
+// 	defer logger.Sync()
+// 	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
+// 	tableName := "characterlists_users"
+// 	if !s.db.HasTable(tableName) {
+// 		logger.Info("No target table. Start to create table",
+// 			zap.Time("now", time.Now()), zap.String("table name", tableName))
+// 		if res := s.db.Table(tableName).AutoMigrate(&UserCharacterList{}); res.Error != nil {
+// 			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(res.Error))
+// 			return res.Error
+// 		}
+// 		logger.Info("Table creation done", zap.Time("now", time.Now()))
+// 	}
+// 	return nil
+// }
 
-func (s *GachaModel) GetCharaterList(ctx context.Context, id int) ([]*UserCharacterList, error) {
+func (s *GachaModel) GetCharaterList(ctx context.Context, user *usermodel.UserLists) ([]*UserCharacterList, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
@@ -45,14 +46,14 @@ func (s *GachaModel) GetCharaterList(ctx context.Context, id int) ([]*UserCharac
 
 	tableName := "characterlists_users"
 	// charList := []*CharacterLists{}
-	if err := s.db.Table(tableName).Where("`user_id` = ?", id).Find(&res).Error; err != nil {
+	if err := s.db.Table(tableName).Where("`user_id` = ?", user.ID).Find(&res).Error; err != nil {
 		logger.Info("Fail to get char list from db", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, err
 	}
 	return res, nil
 }
 
-func (s *GachaModel) RegisterCharacters(ctx context.Context, characters []*UserCharacterList) error {
+func (s *GachaModel) RegisterCharacters(characters []*UserCharacterList) error {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
@@ -66,24 +67,24 @@ func (s *GachaModel) RegisterCharacters(ctx context.Context, characters []*UserC
 	return nil
 }
 
-func (s *GachaModel) CharacterTableCheck(ctx context.Context) error {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
-	tableName := "formal_character_lists"
-	if !s.db.HasTable(tableName) {
-		logger.Info("No target table. Start to create table",
-			zap.Time("now", time.Now()), zap.String("table name", tableName))
-		if res := s.db.Table(tableName).AutoMigrate(&CharacterLists{}); res.Error != nil {
-			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(res.Error))
-			return res.Error
-		}
-		logger.Info("Table creation done", zap.Time("now", time.Now()))
-	}
-	return nil
-}
+// func (s *GachaModel) CharacterTableCheck(ctx context.Context) error {
+// 	logger, _ := zap.NewProduction()
+// 	defer logger.Sync()
+// 	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
+// 	tableName := "formal_character_lists"
+// 	if !s.db.HasTable(tableName) {
+// 		logger.Info("No target table. Start to create table",
+// 			zap.Time("now", time.Now()), zap.String("table name", tableName))
+// 		if res := s.db.Table(tableName).AutoMigrate(&CharacterLists{}); res.Error != nil {
+// 			logger.Info("Error to create table", zap.Time("now", time.Now()), zap.Error(res.Error))
+// 			return res.Error
+// 		}
+// 		logger.Info("Table creation done", zap.Time("now", time.Now()))
+// 	}
+// 	return nil
+// }
 
-func (s *GachaModel) AddNewCharacter(ctx context.Context, character *CharacterLists) error {
+func (s *GachaModel) AddNewCharacter(character *CharacterLists) error {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
@@ -100,7 +101,7 @@ func (s *GachaModel) AddNewCharacter(ctx context.Context, character *CharacterLi
 	return nil
 }
 
-func (s *GachaModel) GetForamalCharacterList(ctx context.Context) ([]*CharacterLists, error) {
+func (s *GachaModel) GetForamalCharacterList() ([]*CharacterLists, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
@@ -111,7 +112,7 @@ func (s *GachaModel) GetForamalCharacterList(ctx context.Context) ([]*CharacterL
 	return characters, nil
 }
 
-func (s *GachaModel) GetRankRatio(ctx context.Context) ([]*RankRatio, error) {
+func (s *GachaModel) GetRankRatio() ([]*RankRatio, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Get Rarelity Process", zap.Time("now", time.Now()))

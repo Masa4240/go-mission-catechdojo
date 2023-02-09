@@ -9,8 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Masa4240/go-mission-catechdojo/handler/router"
-	"github.com/Masa4240/go-mission-catechdojo/model"
+	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
+	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
+	"github.com/Masa4240/go-mission-catechdojo/view/router"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -51,16 +53,10 @@ func realMain() error {
 	}
 	defer userDB.Close()
 
-	if !userDB.HasTable("user_lists") {
-		logger.Info("No target table. Start to create table", zap.Time("now", time.Now()))
-		if res := userDB.Table("user_lists").AutoMigrate(&model.UserLists{}); res.Error != nil {
-			logger.Info("Error to create table", zap.Error(res.Error))
-			return res.Error
-		}
-	}
+	// Master Data initialization
+	gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData()
 
 	// Monster Lists
-
 	mux := router.NewRouter(userDB)
 	srv := &http.Server{
 		Addr:    defaultPort,

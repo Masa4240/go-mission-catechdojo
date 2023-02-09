@@ -1,4 +1,4 @@
-package controller
+package gachacontroller
 
 import (
 	"encoding/json"
@@ -6,21 +6,22 @@ import (
 	"time"
 
 	"github.com/Masa4240/go-mission-catechdojo/model"
-	"github.com/Masa4240/go-mission-catechdojo/service"
+	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	"go.uber.org/zap"
 )
 
 type GachaController struct {
-	svc *service.GachaServiceMVC
+	svc *gachaservice.GachaService
 }
 
 // NewHealthzHandler returns HealthzHandler based http.Handler.
-func NewGachaController(svc *service.GachaServiceMVC) *GachaController {
+func NewGachaController(svc *gachaservice.GachaService) *GachaController {
 	return &GachaController{
 		svc: svc,
 	}
 }
 
+// これはHandlerにあるべき、Viewの下にこれを持ってくる。Serviceの呼び出しをControllerから呼び出す
 func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
@@ -36,7 +37,6 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := h.svc.Gacha(r.Context(), int(r.Context().Value("id").(int64)), req.Times)
-
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -80,7 +80,11 @@ func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Reques
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	// var res = []*model.GachaResponse{}
-	res, err := h.svc.GetUserCharacterList(r.Context(), int(r.Context().Value("id").(int64)))
+	id, ok := int(r.Context().Value("id").(int64))
+	if !ok {
+		return
+	}
+	res, err := h.svc.GetUserCharacterList(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
