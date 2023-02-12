@@ -11,17 +11,17 @@ import (
 	"go.uber.org/zap"
 )
 
-type UserServiceMVC struct {
+type UserService struct {
 	svc *usermodel.UserModel
 }
 
-func NewUserServiceMVC(svc *usermodel.UserModel) *UserServiceMVC {
-	return &UserServiceMVC{
+func NewUserService(svc *usermodel.UserModel) *UserService {
+	return &UserService{
 		svc: svc,
 	}
 }
 
-func (s *UserServiceMVC) CreateUserService(ctx context.Context, newName string) (*string, error) {
+func (s *UserService) CreateUserService(ctx context.Context, newName string) (*string, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()), zap.String("new name is", newName))
@@ -48,7 +48,7 @@ func (s *UserServiceMVC) CreateUserService(ctx context.Context, newName string) 
 	return &tokenString, nil
 }
 
-func (s *UserServiceMVC) GetUserService(ctx context.Context, reqID int) (*string, error) {
+func (s *UserService) GetUserService(ctx context.Context, reqID int) (*string, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start to get User name", zap.Time("now", time.Now()), zap.Int("Requested ID", reqID))
@@ -64,7 +64,7 @@ func (s *UserServiceMVC) GetUserService(ctx context.Context, reqID int) (*string
 	return &res.Name, nil
 }
 
-func (s *UserServiceMVC) UpdateUserService(ctx context.Context, newName string, reqID int) error {
+func (s *UserService) UpdateUserService(ctx context.Context, newName string, reqID int) error {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	if err := s.nameValidation(ctx, newName); err != nil {
@@ -87,7 +87,7 @@ func (s *UserServiceMVC) UpdateUserService(ctx context.Context, newName string, 
 	return nil
 }
 
-func (s *UserServiceMVC) nameValidation(ctx context.Context, newName string) error {
+func (s *UserService) nameValidation(ctx context.Context, newName string) error {
 	if len(newName) == 0 {
 		err := errors.New("null name")
 		return err

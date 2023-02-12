@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Masa4240/go-mission-catechdojo/model"
-	"github.com/Masa4240/go-mission-catechdojo/service"
+	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
+	userservice "github.com/Masa4240/go-mission-catechdojo/service/user"
 	"go.uber.org/zap"
 )
 
 type UserController struct {
-	svc *service.UserServiceMVC
+	svc *userservice.UserService
 }
 
 // NewHealthzHandler returns HealthzHandler based http.Handler.
-func NewUserController(svc *service.UserServiceMVC) *UserController {
+func NewUserController(svc *userservice.UserService) *UserController {
 	return &UserController{
 		svc: svc,
 	}
@@ -25,8 +25,8 @@ func (h *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
-	var req = model.UserResistrationRequest{}
-	var resp = model.UserResistrationResponse{}
+	var req = usermodel.UserResistrationRequest{}
+	var resp = usermodel.UserResistrationResponse{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -51,7 +51,7 @@ func (h *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
-	var res = model.UserGetResponse{}
+	var res = usermodel.UserGetResponse{}
 	id := r.Context().Value("id").(int64)
 
 	name, err := h.svc.GetUserService(r.Context(), int(id))
@@ -74,7 +74,7 @@ func (h *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	defer logger.Sync()
 	logger.Info("Start update User Process in controller", zap.Time("now", time.Now()))
 
-	var req = model.UserUpdateRequest{}
+	var req = usermodel.UserUpdateRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Decode error", zap.Time("now", time.Now()))

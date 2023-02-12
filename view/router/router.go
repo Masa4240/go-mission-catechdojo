@@ -3,15 +3,17 @@ package router
 import (
 	"net/http"
 
-	"github.com/Masa4240/go-mission-catechdojo/controller"
+	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
+	"github.com/jinzhu/gorm"
+
+	usercontroller "github.com/Masa4240/go-mission-catechdojo/controller/user"
 	"github.com/Masa4240/go-mission-catechdojo/middleware"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
-	userservice "github.com/Masa4240/go-mission-catechdojo/service"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
+	userservice "github.com/Masa4240/go-mission-catechdojo/service/user"
 
 	"github.com/go-chi/chi"
-	"github.com/jinzhu/gorm"
 )
 
 func NewRouter(userDB *gorm.DB) http.Handler {
@@ -21,7 +23,8 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 
 	svc3 := usermodel.NewUserModel(userDB)
 	svc2 := userservice.NewUserService(svc3)
-	userController := controller.NewUserController(svc2)
+
+	userController := usercontroller.NewUserController(svc2)
 	r.Route("/user1", func(r chi.Router) {
 		r.Post("/create", userController.CreateUser)
 		r.Route("/", func(r chi.Router) {
@@ -33,7 +36,7 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 
 	gsvc3 := gachamodel.NewGachaModel(userDB)
 	gsvc2 := gachaservice.NewGachaService(gsvc3)
-	gachaController := controller.NewGachaController(gsvc2)
+	gachaController := gachacontroller.NewGachaController(gsvc2)
 	r.Route("/gacha1", func(r chi.Router) {
 		r.Use(middleware.TokenValidation)
 		r.Post("/draw", gachaController.Gacha)

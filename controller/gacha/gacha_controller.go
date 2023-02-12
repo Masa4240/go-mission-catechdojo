@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Masa4240/go-mission-catechdojo/model"
+	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	"go.uber.org/zap"
 )
@@ -27,7 +27,7 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	defer logger.Sync()
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
-	req := model.GachaReq{}
+	req := gachamodel.GachaReq{}
 	req.ID = int(r.Context().Value("id").(int64))
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -57,7 +57,7 @@ func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 	defer logger.Sync()
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
-	var req = model.NewCharacterReq{}
+	var req = gachamodel.NewCharacterReq{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -80,10 +80,10 @@ func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Reques
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	// var res = []*model.GachaResponse{}
-	id, ok := int(r.Context().Value("id").(int64))
-	if !ok {
-		return
-	}
+	id := int(r.Context().Value("id").(int64))
+	// if !ok {
+	// 	return
+	// }
 	res, err := h.svc.GetUserCharacterList(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

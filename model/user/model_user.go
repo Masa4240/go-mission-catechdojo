@@ -7,6 +7,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
+	// "github.com/jinzhu/gorm"
+	// "go.uber.org/zap"
 )
 
 type UserModel struct {
@@ -50,7 +52,7 @@ func (s *UserModel) GetUserByName(ctx context.Context, user *UserLists) ([]*User
 	userList := []*UserLists{}
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
-	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.Int("Requested ID", int(userList.ID)))
+	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.String("Requested ID", (user.Name)))
 	if err := s.db.Table("user_lists").Find(&userList, "name=?", user.Name).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, err

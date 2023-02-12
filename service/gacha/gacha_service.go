@@ -97,7 +97,7 @@ func (s *GachaService) GetUserCharacterList(ctx context.Context, id int) ([]*gac
 	return res, nil
 }
 
-func characterGachaMVC(id int, characters []*gachamodel.CharacterLists, newCharacters []*gachamodel.UserCharacterList) []*model.UserCharacterList {
+func characterGachaMVC(id int, characters []*gachamodel.CharacterLists, newCharacters []*gachamodel.UserCharacterList) []*gachamodel.UserCharacterList {
 
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()

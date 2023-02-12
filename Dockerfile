@@ -4,13 +4,13 @@ RUN mkdir /app
 WORKDIR /app
 
 
-#RUN go install github.com/go-sql-driver/mysql@latest
+# RUN go install github.com/go-sql-driver/mysql@latest
 
 COPY go.mod ./
 COPY go.sum ./
 
-RUN go mod download
 RUN go mod tidy
+RUN go mod download
 
 
 COPY ./ ./

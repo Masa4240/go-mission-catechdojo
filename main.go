@@ -12,7 +12,6 @@ import (
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	"github.com/Masa4240/go-mission-catechdojo/view/router"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -50,11 +49,24 @@ func realMain() error {
 	userDB, err := gorm.Open(dbms, connect)
 	if err != nil {
 		logger.Info("Fail to connect DB", zap.Time("now", time.Now()), zap.Error(err))
+		for i := 0; i < 5; i++ {
+			time.Sleep(3 * time.Second)
+			userDB, err = gorm.Open(dbms, connect)
+			if err == nil {
+				break
+			}
+			if err != nil {
+				logger.Info("Fail to connect DB", zap.Time("now", time.Now()), zap.Int("trial", i), zap.Error(err))
+			}
+		}
 	}
 	defer userDB.Close()
 
 	// Master Data initialization
-	gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData()
+	// gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData()
+	if err = gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData(); err != nil {
+		logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
+	}
 
 	// Monster Lists
 	mux := router.NewRouter(userDB)
