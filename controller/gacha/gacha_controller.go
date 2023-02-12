@@ -14,7 +14,6 @@ type GachaController struct {
 	svc *gachaservice.GachaService
 }
 
-// NewHealthzHandler returns HealthzHandler based http.Handler.
 func NewGachaController(svc *gachaservice.GachaService) *GachaController {
 	return &GachaController{
 		svc: svc,
