@@ -10,7 +10,7 @@ func Recovery(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		logger, _ := zap.NewProduction()
 		defer logger.Sync()
-		logger.Info("Recovery")
+		// logger.Info("Recovery")
 		defer func() {
 			err := recover()
 			if err != nil {

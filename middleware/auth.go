@@ -44,7 +44,13 @@ func TokenValidation(h http.Handler) http.Handler {
 		logger.Info("Decode Done", zap.Time("now", time.Now()),
 			zap.String("Name", dectoken.Name), zap.Int64("ID", dectoken.ID))
 
-		id := "id"
+		type key int
+
+		const (
+			id key = iota
+		)
+
+		// id := "id"
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), id, dectoken.ID)))
 	}
 	return http.HandlerFunc(fn)
@@ -63,17 +69,18 @@ func parse(signedString string) (*Auth, error) {
 	})
 
 	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorExpired != 0 {
-				logger.Info("token is expired", zap.Time("now", time.Now()), zap.Error(err))
-			} else {
-				logger.Info("token is invalid", zap.Time("now", time.Now()), zap.Error(err))
-				return nil, errors.New("INVALID Token")
-			}
-		} else {
-			logger.Info("token is expired", zap.Time("now", time.Now()), zap.Error(err))
-			return nil, errors.New("INVALID Token")
-		}
+		return nil, errors.New("INVALID Token")
+		// if ve, ok := err.(*jwt.ValidationError); ok {
+		// 	if ve.Errors&jwt.ValidationErrorExpired != 0 {
+		// 		logger.Info("token is expired", zap.Time("now", time.Now()), zap.Error(err))
+		// 	} else {
+		// 		logger.Info("token is invalid", zap.Time("now", time.Now()), zap.Error(err))
+		// 		return nil, errors.New("INVALID Token")
+		// 	}
+		// } else {
+		// 	logger.Info("token is expired", zap.Time("now", time.Now()), zap.Error(err))
+		// 	return nil, errors.New("INVALID Token")
+		// }
 	}
 
 	if token == nil {
@@ -86,7 +93,11 @@ func parse(signedString string) (*Auth, error) {
 		logger.Info("not found claims in token", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, errors.New("INVALID Token")
 	}
-	id := claims["id"].(float64)
+	id, ok2 := claims["id"].(float64)
+	if !ok2 {
+		logger.Info("not found claims in token", zap.Time("now", time.Now()), zap.Error(err))
+		return nil, errors.New("INVALID Token")
+	}
 
 	return &Auth{
 		//		Name: name,

@@ -1,14 +1,11 @@
 package usermodel
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
-	// "github.com/jinzhu/gorm"
-	// "go.uber.org/zap"
 )
 
 type UserModel struct {
@@ -21,7 +18,7 @@ func NewUserModel(db *gorm.DB) *UserModel {
 	}
 }
 
-func (s *UserModel) CreateUser(ctx context.Context, newUser *UserLists) (*UserLists, error) {
+func (s *UserModel) CreateUser(newUser *UserLists) (*UserLists, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Create User Model", zap.Time("now", time.Now()), zap.String("new name is", newUser.Name))
@@ -29,55 +26,56 @@ func (s *UserModel) CreateUser(ctx context.Context, newUser *UserLists) (*UserLi
 	user := *newUser
 	// newUser.Name = newName
 
-	if res := s.db.Create(&user); res.Error != nil {
+	if res := s.db.Table("user_list").Create(&user); res.Error != nil {
 		logger.Info("Start Create User Process", zap.Time("now", time.Now()), zap.Error(res.Error))
 		return nil, res.Error
 	}
 	return &user, nil
 }
 
-func (s *UserModel) GetUserById(ctx context.Context, user *UserLists) (*UserLists, error) {
+func (s *UserModel) GetUserByID(user *UserLists) (*UserLists, error) {
 	userList := UserLists{}
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.Int("Requested ID", int(user.ID)))
-	if err := s.db.Table("user_lists").Find(&userList, "id=?", user.ID).Error; err != nil {
+	if err := s.db.Table("user_list").Find(&userList, "id=?", user.ID).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, err
 	}
 	return &userList, nil
 }
 
-func (s *UserModel) GetUserByName(ctx context.Context, user *UserLists) ([]*UserLists, error) {
+func (s *UserModel) GetUserByName(user *UserLists) ([]*UserLists, error) {
 	userList := []*UserLists{}
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.String("Requested ID", (user.Name)))
-	if err := s.db.Table("user_lists").Find(&userList, "name=?", user.Name).Error; err != nil {
+	if err := s.db.Table("user_list").Find(&userList, "name=?", user.Name).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, err
 	}
 	return userList, nil
 }
 
-// Modelを受け取る、例えばUserListで受け取って
-// GORMならModelを渡すと変更がある部分だけ変更してくれる
-func (s *UserModel) UpdateUser(ctx context.Context, user *UserLists) error {
+func (s *UserModel) UpdateUser(user *UserLists) error {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Update User model", zap.Time("now", time.Now()))
 
-	if err := s.db.Table("user_lists").Where("id=?", user.ID).Update("name", user.Name).Error; err != nil {
+	// if err := s.db.Table("user_list").Where("id=?", user.ID).Update("name", user.Name).Error; err != nil {
+	// 	logger.Info("Fail to update DB", zap.Time("now", time.Now()),
+	// 		zap.String("name", user.Name), zap.Int("id", int(user.ID)), zap.Error(err))
+	// 	err := errors.New("fail update db")
+	// 	return err
+	// }
+	if err := s.db.Table("user_list").Updates(&user).Error; err != nil {
 		logger.Info("Fail to update DB", zap.Time("now", time.Now()),
 			zap.String("name", user.Name), zap.Int("id", int(user.ID)), zap.Error(err))
-		err := errors.New("fail update db")
-		return err
+		return errors.New("fail update db")
+		// return err
 	}
 	return nil
 }
-
-// GetUserByName でNameで検索、Service側で読んでNilなら重複なし、Nilじゃなかったら重複あり
-// Business LogicはService, Modeは基本的にSQLとやり取りするだけ
 
 // func (s *UserModel) DuplicationCheck(ctx context.Context, newName string) error {
 // 	logger, _ := zap.NewProduction()
@@ -100,14 +98,13 @@ func (s *UserModel) UpdateUser(ctx context.Context, user *UserLists) error {
 // 	return nil
 // }
 
-// なくていい、テーブルの更新、作成はMigrationという仕組みで行う
-// func (s *UserModel) TableConfirmation(ctx context.Context) error {
+// func (s *UserModel) TableConfirmation() error {
 // 	logger, _ := zap.NewProduction()
 // 	defer logger.Sync()
 // 	logger.Info("Start TableConfirmation model", zap.Time("now", time.Now()))
-// 	if !s.db.HasTable("user_lists") {
+// 	if !s.db.HasTable("user_list") {
 // 		logger.Info("No target table. Start to create table")
-// 		if res := s.db.Table("user_lists").AutoMigrate(&UserLists{}); res.Error != nil {
+// 		if res := s.db.Table("user_list").AutoMigrate(&UserLists{}); res.Error != nil {
 // 			logger.Info("Error to create table", zap.Error(res.Error))
 // 			return res.Error
 // 		}

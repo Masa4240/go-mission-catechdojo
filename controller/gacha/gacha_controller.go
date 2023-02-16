@@ -20,7 +20,7 @@ func NewGachaController(svc *gachaservice.GachaService) *GachaController {
 	}
 }
 
-// これはHandlerにあるべき、Viewの下にこれを持ってくる。Serviceの呼び出しをControllerから呼び出す
+// これはHandlerにあるべき、Viewの下にこれを持ってくる。Serviceの呼び出しをControllerから呼び出す.
 func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
@@ -35,7 +35,7 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.svc.Gacha(r.Context(), int(r.Context().Value("id").(int64)), req.Times)
+	res, err := h.svc.Gacha(int(r.Context().Value("id").(int64)), req.Times)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -62,7 +62,7 @@ func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err := h.svc.AddCharacter(r.Context(), req.Name, req.Rank, req.Desc, req.Weight)
+	err := h.svc.AddCharacter(req.Name, req.Rank, req.Desc, req.Weight)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -83,7 +83,7 @@ func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Reques
 	// if !ok {
 	// 	return
 	// }
-	res, err := h.svc.GetUserCharacterList(r.Context(), id)
+	res, err := h.svc.GetUserCharacterList(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))

@@ -1,7 +1,6 @@
 package gachaservice
 
 import (
-	"context"
 	"math/big"
 
 	"crypto/rand"
@@ -17,11 +16,11 @@ type GachaService struct {
 }
 
 var (
-	CharacterMasterDataMVC map[int]*gachamodel.CharacterLists
-	SrCharacters           []*gachamodel.CharacterLists
-	RCharacters            []*gachamodel.CharacterLists
-	NCharacters            []*gachamodel.CharacterLists
-	RankWeightMVC          map[string]int
+	characterMasterDataMVC map[int]*gachamodel.CharacterLists //go:embed
+	srCharacters           []*gachamodel.CharacterLists       //go:embed
+	rCharacters            []*gachamodel.CharacterLists       //go:embed
+	nCharacters            []*gachamodel.CharacterLists       //go:embed
+	rankWeightMVC          map[string]int                     //go:embed
 )
 
 func NewGachaService(svc *gachamodel.GachaModel) *GachaService {
@@ -30,42 +29,37 @@ func NewGachaService(svc *gachamodel.GachaModel) *GachaService {
 	}
 }
 
-// このServiceをControllerとServiceに分ける
-func (s *GachaService) Gacha(ctx context.Context, id, count int) ([]*gachamodel.GachaResponse, error) {
+// このServiceをControllerとServiceに分ける.
+func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
-
-	// if err := s.svc.GachaTableCheck(ctx); err != nil {
-	// 	logger.Info("Error table handling", zap.Time("now", time.Now()))
-	// 	return nil, err
-	// }
 
 	// Gacha
 	newCharacters := []*gachamodel.UserCharacterList{}
 	// newResCharacters := []*model.GachaResponse{}
 	var newResCharacters []*gachamodel.GachaResponse
 	logger.Info("Gacha start", zap.Time("now", time.Now()))
-	max := RankWeightMVC["SR"] + RankWeightMVC["R"] + RankWeightMVC["N"]
+	max := rankWeightMVC["SR"] + rankWeightMVC["R"] + rankWeightMVC["N"]
 	for i := 0; i < count; i++ {
 		// rand.Seed(time.Now().UnixNano())
 		logger.Info("Gacha number", zap.Time("now", time.Now()),
-			zap.Int("SR ratio", RankWeightMVC["SR"]), zap.Int("R ratio", RankWeightMVC["N"]),
-			zap.Int("N ratio", RankWeightMVC["N"]))
+			zap.Int("SR ratio", rankWeightMVC["SR"]), zap.Int("R ratio", rankWeightMVC["N"]),
+			zap.Int("N ratio", rankWeightMVC["N"]))
 		// result := rand.Intn(RankWeightMVC["SR"] + RankWeightMVC["R"] + RankWeightMVC["N"])
 		result, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
 		if err != nil {
 			logger.Info("Fail to create rand", zap.Time("now", time.Now()), zap.Error(err))
 			return nil, err
 		}
-		if int(result.Int64()) < RankWeightMVC["SR"] {
-			newCharacters = characterGachaMVC(id, SrCharacters, newCharacters)
+		if int(result.Int64()) < rankWeightMVC["SR"] {
+			newCharacters = characterGachaMVC(id, srCharacters, newCharacters)
 		}
-		if int(result.Int64()) >= RankWeightMVC["SR"] && int(result.Int64()) < RankWeightMVC["SR"]+RankWeightMVC["R"] {
-			newCharacters = characterGachaMVC(id, RCharacters, newCharacters)
+		if int(result.Int64()) >= rankWeightMVC["SR"] && int(result.Int64()) < rankWeightMVC["SR"]+rankWeightMVC["R"] {
+			newCharacters = characterGachaMVC(id, rCharacters, newCharacters)
 		}
-		if int(result.Int64()) >= RankWeightMVC["SR"]+RankWeightMVC["R"] {
-			newCharacters = characterGachaMVC(id, NCharacters, newCharacters)
+		if int(result.Int64()) >= rankWeightMVC["SR"]+rankWeightMVC["R"] {
+			newCharacters = characterGachaMVC(id, nCharacters, newCharacters)
 		}
 	}
 
@@ -80,7 +74,7 @@ func (s *GachaService) Gacha(ctx context.Context, id, count int) ([]*gachamodel.
 	return newResCharacters, nil
 }
 
-func (s *GachaService) GetUserCharacterList(ctx context.Context, id int) ([]*gachamodel.GachaResponse, error) {
+func (s *GachaService) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
@@ -88,7 +82,7 @@ func (s *GachaService) GetUserCharacterList(ctx context.Context, id int) ([]*gac
 	var req usermodel.UserLists
 	req.ID = uint(id)
 
-	list, err := s.svc.GetCharaterList(ctx, &req)
+	list, err := s.svc.GetCharaterList(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +91,8 @@ func (s *GachaService) GetUserCharacterList(ctx context.Context, id int) ([]*gac
 	return res, nil
 }
 
-func characterGachaMVC(id int, characters []*gachamodel.CharacterLists, newCharacters []*gachamodel.UserCharacterList) []*gachamodel.UserCharacterList {
-
+func characterGachaMVC(id int, characters []*gachamodel.CharacterLists,
+	newCharacters []*gachamodel.UserCharacterList) []*gachamodel.UserCharacterList {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	newCharacter := gachamodel.UserCharacterList{}
@@ -124,13 +118,13 @@ func resConverter(characterList []*gachamodel.UserCharacterList) []*gachamodel.G
 		resCharacter := gachamodel.GachaResponse{}
 		resCharacter.CharacterID = characterList[i].CharacterID
 		// resCharacter.Name = CharacterMasterDataMVC[int(characterList[i].CharacterID)].Name
-		resCharacter.Name = CharacterMasterDataMVC[characterList[i].CharacterID].Name
+		resCharacter.Name = characterMasterDataMVC[characterList[i].CharacterID].Name
 		resCharacters = append(resCharacters, &resCharacter)
 	}
 	return resCharacters
 }
 
-func (s *GachaService) AddCharacter(ctx context.Context, name, rank, desc string, weight int) error {
+func (s *GachaService) AddCharacter(name, rank, desc string, weight int) error {
 	logger, _ := zap.NewProduction()
 	// charList := formalCharacterList{}
 	defer logger.Sync()
@@ -156,64 +150,81 @@ func (s *GachaService) AddCharacter(ctx context.Context, name, rank, desc string
 }
 
 func (s *GachaService) GetMasterData() error {
+	// masterCharacters := []*model.CharacterLists{}
+	initializeMasterData()
+
+	if err := s.getCharacterMasterData(); err != nil {
+		return err
+	}
+
+	if err := s.getRankMasterData(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initializeMasterData() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
-	logger.Info("Get Master character lists", zap.Time("now", time.Now()))
-
-	// masterCharacters := []*model.CharacterLists{}
-
-	if SrCharacters != nil {
+	logger.Info("Initialize Master Data", zap.Time("now", time.Now()))
+	if srCharacters != nil {
 		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
-		SrCharacters = nil
+		srCharacters = nil
 	}
-	if RCharacters != nil {
+	if rCharacters != nil {
 		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
-		RCharacters = nil
+		rCharacters = nil
 	}
-	if NCharacters != nil {
+	if nCharacters != nil {
 		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
-		NCharacters = nil
+		nCharacters = nil
 	}
+}
 
+func (s *GachaService) getCharacterMasterData() error {
 	masterCharacters, err := s.svc.GetForamalCharacterList()
 	if err != nil {
 		return err
 	}
-
-	CharacterMasterDataMVC = map[int]*gachamodel.CharacterLists{}
+	characterMasterDataMVC = map[int]*gachamodel.CharacterLists{}
 	for i := 0; i < len(masterCharacters); i++ {
-		CharacterMasterDataMVC[int(masterCharacters[i].ID)] = masterCharacters[i]
+		characterMasterDataMVC[int(masterCharacters[i].ID)] = masterCharacters[i]
 		if masterCharacters[i].Rank == "SR" {
 			for j := 0; j < masterCharacters[i].Weight; j++ {
-				SrCharacters = append(SrCharacters, masterCharacters[i])
+				srCharacters = append(srCharacters, masterCharacters[i])
 			}
 		}
 
 		if masterCharacters[i].Rank == "R" {
 			for j := 0; j < masterCharacters[i].Weight; j++ {
-				RCharacters = append(RCharacters, masterCharacters[i])
+				rCharacters = append(rCharacters, masterCharacters[i])
 			}
 		}
 		if masterCharacters[i].Rank == "N" {
 			for j := 0; j < masterCharacters[i].Weight; j++ {
-				NCharacters = append(NCharacters, masterCharacters[i])
+				nCharacters = append(nCharacters, masterCharacters[i])
 			}
 		}
 	}
+	return nil
+}
+
+func (s *GachaService) getRankMasterData() error {
 	rankRatio, err := s.svc.GetRankRatio()
 	if err != nil {
 		return err
 	}
-	RankWeightMVC = map[string]int{}
+	rankWeightMVC = map[string]int{}
 	for i := 0; i < 3; i++ {
 		if rankRatio[i].Ranklevel == "SR" {
-			RankWeightMVC["SR"] = rankRatio[i].Weight
+			rankWeightMVC["SR"] = rankRatio[i].Weight
 		}
 		if rankRatio[i].Ranklevel == "R" {
-			RankWeightMVC["R"] = rankRatio[i].Weight
+			rankWeightMVC["R"] = rankRatio[i].Weight
 		}
 		if rankRatio[i].Ranklevel == "N" {
-			RankWeightMVC["N"] = rankRatio[i].Weight
+			rankWeightMVC["N"] = rankRatio[i].Weight
 		}
 	}
 	return nil

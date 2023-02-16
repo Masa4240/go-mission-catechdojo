@@ -25,7 +25,7 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 	svc2 := userservice.NewUserService(svc3)
 
 	userController := usercontroller.NewUserController(svc2)
-	r.Route("/user1", func(r chi.Router) {
+	r.Route("/user", func(r chi.Router) {
 		r.Post("/create", userController.CreateUser)
 		r.Route("/", func(r chi.Router) {
 			r.Use(middleware.TokenValidation)
@@ -37,12 +37,12 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 	gsvc3 := gachamodel.NewGachaModel(userDB)
 	gsvc2 := gachaservice.NewGachaService(gsvc3)
 	gachaController := gachacontroller.NewGachaController(gsvc2)
-	r.Route("/gacha1", func(r chi.Router) {
+	r.Route("/gacha", func(r chi.Router) {
 		r.Use(middleware.TokenValidation)
 		r.Post("/draw", gachaController.Gacha)
 	})
 
-	r.Route("/character1", func(r chi.Router) {
+	r.Route("/character", func(r chi.Router) {
 		r.Use(middleware.TokenValidation)
 		r.Get("/list", gachaController.GetCharacterList)
 	})

@@ -38,7 +38,7 @@ func realMain() error {
 
 	dbms := "mysql"
 	user := "root"
-	pass := "root"
+	pass := "xxx"
 	protocol := "tcp(ca-mission:3306)"
 	dbname := "ca_mission"
 
@@ -49,30 +49,32 @@ func realMain() error {
 	userDB, err := gorm.Open(dbms, connect)
 	if err != nil {
 		logger.Info("Fail to connect DB", zap.Time("now", time.Now()), zap.Error(err))
+		const wait = 3
 		for i := 0; i < 5; i++ {
-			time.Sleep(3 * time.Second)
+			time.Sleep(wait * time.Second)
 			userDB, err = gorm.Open(dbms, connect)
 			if err == nil {
 				break
-			}
-			if err != nil {
-				logger.Info("Fail to connect DB", zap.Time("now", time.Now()), zap.Int("trial", i), zap.Error(err))
 			}
 		}
 	}
 	defer userDB.Close()
 
+	// gachamodel.NewGachaModel(userDB).CharacterTableCheck()
+	// usermodel.NewUserModel(userDB).TableConfirmation()
+
 	// Master Data initialization
-	// gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData()
 	if err = gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData(); err != nil {
 		logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
+		return err
 	}
-
 	// Monster Lists
 	mux := router.NewRouter(userDB)
+	const serverTimeout = 10
 	srv := &http.Server{
-		Addr:    defaultPort,
-		Handler: mux,
+		Addr:              defaultPort,
+		Handler:           mux,
+		ReadHeaderTimeout: serverTimeout * time.Second,
 	}
 
 	go func() {
@@ -86,7 +88,8 @@ func realMain() error {
 	signal.Notify(quit, syscall.SIGTERM, os.Interrupt) // Monitoring signals
 	log.Printf("SIGNAL %d received, then shutting down...\n", <-quit)
 
-	timer := 10 * time.Second
+	const gsTimer = 10
+	timer := gsTimer * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timer)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {

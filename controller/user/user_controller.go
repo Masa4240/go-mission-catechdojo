@@ -32,7 +32,7 @@ func (h *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	userinfo, err := h.svc.CreateUserService(r.Context(), req.Name)
+	userinfo, err := h.svc.CreateUserService(req.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -52,9 +52,12 @@ func (h *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	defer logger.Sync()
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
 	var res = usermodel.UserGetResponse{}
-	id := r.Context().Value("id").(int64)
+	id, ok := r.Context().Value("id").(int64)
+	if !ok {
+		return
+	}
 
-	name, err := h.svc.GetUserService(r.Context(), int(id))
+	name, err := h.svc.GetUserService(int(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -81,9 +84,12 @@ func (h *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id := r.Context().Value("id").(int64)
+	id, ok := r.Context().Value("id").(int64)
+	if !ok {
+		return
+	}
 
-	if err := h.svc.UpdateUserService(r.Context(), req.Newname, int(id)); err != nil {
+	if err := h.svc.UpdateUserService(req.Newname, int(id)); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in service", zap.Time("now", time.Now()))
 		return
