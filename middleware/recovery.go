@@ -9,7 +9,11 @@ import (
 func Recovery(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		logger, _ := zap.NewProduction()
-		defer logger.Sync()
+		defer func(logger *zap.Logger) {
+			if err := logger.Sync(); err != nil {
+				panic(err)
+			}
+		}(logger)
 		// logger.Info("Recovery")
 		defer func() {
 			err := recover()

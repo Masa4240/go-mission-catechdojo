@@ -21,7 +21,12 @@ func NewGachaModel(db *gorm.DB) *GachaModel {
 
 // func (s *GachaModel) GachaTableCheck(ctx context.Context) error {
 // 	logger, _ := zap.NewProduction()
-// 	defer logger.Sync()
+// 	defer func(logger *zap.Logger) {
+// err := logger.Sync()
+// if err != nil {
+// panic(err)
+// }
+// }(logger)
 // 	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
 // 	tableName := "characterlists_users"
 // 	if !s.db.HasTable(tableName) {
@@ -38,7 +43,11 @@ func NewGachaModel(db *gorm.DB) *GachaModel {
 
 func (s *GachaModel) GetCharaterList(user *usermodel.UserLists) ([]*UserCharacterList, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	var res []*UserCharacterList
@@ -54,7 +63,11 @@ func (s *GachaModel) GetCharaterList(user *usermodel.UserLists) ([]*UserCharacte
 
 func (s *GachaModel) RegisterCharacters(characters []*UserCharacterList) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 	for i := 0; i < len(characters); i++ {
 		res := s.db.Table("user_characterlist").Create(characters[i])
@@ -68,7 +81,11 @@ func (s *GachaModel) RegisterCharacters(characters []*UserCharacterList) error {
 
 func (s *GachaModel) CharacterTableCheck() error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Model", zap.Time("now", time.Now()))
 	tableName := "formal_character_list"
 	if !s.db.HasTable(tableName) {
@@ -105,7 +122,11 @@ func (s *GachaModel) CharacterTableCheck() error {
 
 func (s *GachaModel) AddNewCharacter(character *CharacterLists) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	res := s.db.Table("formal_character_list").Create(character)
@@ -122,7 +143,11 @@ func (s *GachaModel) AddNewCharacter(character *CharacterLists) error {
 
 func (s *GachaModel) GetForamalCharacterList() ([]*CharacterLists, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 	characters := []*CharacterLists{}
 	if err := s.db.Table("formal_character_list").Find(&characters).Error; err != nil {
@@ -133,7 +158,11 @@ func (s *GachaModel) GetForamalCharacterList() ([]*CharacterLists, error) {
 
 func (s *GachaModel) GetRankRatio() ([]*RankRatio, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Get Rarelity Process", zap.Time("now", time.Now()))
 	rankRatio := []*RankRatio{}
 

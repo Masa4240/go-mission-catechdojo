@@ -23,7 +23,11 @@ func NewUserController(svc *userservice.UserService) *UserController {
 
 func (h *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
 	var req = usermodel.UserResistrationRequest{}
 	var resp = usermodel.UserResistrationResponse{}
@@ -49,7 +53,11 @@ func (h *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
 	var res = usermodel.UserGetResponse{}
 	id, ok := r.Context().Value("id").(int64)
@@ -74,7 +82,11 @@ func (h *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start update User Process in controller", zap.Time("now", time.Now()))
 
 	var req = usermodel.UserUpdateRequest{}
