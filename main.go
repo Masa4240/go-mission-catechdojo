@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Masa4240/go-mission-catechdojo/handler"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
-	"github.com/Masa4240/go-mission-catechdojo/view/router"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -69,7 +69,7 @@ func realMain() error {
 		return err
 	}
 	// Monster Lists
-	mux := router.NewRouter(userDB)
+	mux := handler.NewRouter(userDB)
 	const serverTimeout = 10
 	srv := &http.Server{
 		Addr:              defaultPort,

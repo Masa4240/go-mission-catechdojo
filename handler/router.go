@@ -1,18 +1,18 @@
-package router
+package handler
 
 import (
+	usercontroller "github.com/Masa4240/go-mission-catechdojo/controller/user"
+	userservice "github.com/Masa4240/go-mission-catechdojo/service/user"
 	"net/http"
 
 	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	"github.com/jinzhu/gorm"
 
-	usercontroller "github.com/Masa4240/go-mission-catechdojo/controller/user"
+	userhandler "github.com/Masa4240/go-mission-catechdojo/handler/user"
 	"github.com/Masa4240/go-mission-catechdojo/middleware"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
-	userservice "github.com/Masa4240/go-mission-catechdojo/service/user"
-
 	"github.com/go-chi/chi"
 )
 
@@ -21,17 +21,13 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 
 	r.Use(middleware.Recovery)
 
-	svc3 := usermodel.NewUserModel(userDB)
-	svc2 := userservice.NewUserService(svc3)
+	userModel := usermodel.NewUserModel(userDB)
+	userService := userservice.NewUserService(userModel)
+	userCtrl := usercontroller.NewUserController(userService)
 
-	userController := usercontroller.NewUserController(svc2)
+	userHandler := userhandler.NewUserHandler(userCtrl)
 	r.Route("/user", func(r chi.Router) {
-		r.Post("/create", userController.CreateUser)
-		r.Route("/", func(r chi.Router) {
-			r.Use(middleware.TokenValidation)
-			r.Get("/get", userController.GetUser)
-			r.Put("/update", userController.UpdateUser)
-		})
+		r.Post("/create", userHandler.CreateUser)
 	})
 
 	gsvc3 := gachamodel.NewGachaModel(userDB)
