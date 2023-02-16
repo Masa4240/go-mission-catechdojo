@@ -22,7 +22,11 @@ func NewUserService(svc *usermodel.UserModel) *UserService {
 
 func (s *UserService) CreateUserService(newName string) (*string, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()), zap.String("new name is", newName))
 
 	if err := s.nameValidation(newName); err != nil {
@@ -52,7 +56,11 @@ func (s *UserService) CreateUserService(newName string) (*string, error) {
 
 func (s *UserService) GetUserService(reqID int) (*string, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start to get User name", zap.Time("now", time.Now()), zap.Int("Requested ID", reqID))
 	var user usermodel.UserLists
 	user.ID = uint(reqID)
@@ -68,7 +76,11 @@ func (s *UserService) GetUserService(reqID int) (*string, error) {
 
 func (s *UserService) UpdateUserService(newName string, reqID int) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	if err := s.nameValidation(newName); err != nil {
 		logger.Info("Wrong Name", zap.Time("now", time.Now()), zap.String("new name is", newName))
 		return err

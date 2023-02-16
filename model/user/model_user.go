@@ -20,7 +20,11 @@ func NewUserModel(db *gorm.DB) *UserModel {
 
 func (s *UserModel) CreateUser(newUser *UserLists) (*UserLists, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Model", zap.Time("now", time.Now()), zap.String("new name is", newUser.Name))
 
 	user := *newUser
@@ -36,7 +40,11 @@ func (s *UserModel) CreateUser(newUser *UserLists) (*UserLists, error) {
 func (s *UserModel) GetUserByID(user *UserLists) (*UserLists, error) {
 	userList := UserLists{}
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.Int("Requested ID", int(user.ID)))
 	if err := s.db.Table("user_list").Find(&userList, "id=?", user.ID).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
@@ -48,7 +56,11 @@ func (s *UserModel) GetUserByID(user *UserLists) (*UserLists, error) {
 func (s *UserModel) GetUserByName(user *UserLists) ([]*UserLists, error) {
 	userList := []*UserLists{}
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.String("Requested ID", (user.Name)))
 	if err := s.db.Table("user_list").Find(&userList, "name=?", user.Name).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
@@ -59,7 +71,11 @@ func (s *UserModel) GetUserByName(user *UserLists) ([]*UserLists, error) {
 
 func (s *UserModel) UpdateUser(user *UserLists) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Update User model", zap.Time("now", time.Now()))
 
 	// if err := s.db.Table("user_list").Where("id=?", user.ID).Update("name", user.Name).Error; err != nil {
@@ -79,7 +95,12 @@ func (s *UserModel) UpdateUser(user *UserLists) error {
 
 // func (s *UserModel) DuplicationCheck(ctx context.Context, newName string) error {
 // 	logger, _ := zap.NewProduction()
-// 	defer logger.Sync()
+// 	defer func(logger *zap.Logger) {
+// err := logger.Sync()
+// if err != nil {
+// panic(err)
+// }
+// }(logger)
 // 	logger.Info("Start Duplicationcheck model", zap.Time("now", time.Now()))
 // 	var userList []UserLists
 // 	err := s.db.Table("user_lists").Find(&userList, "name=?", newName).Error
@@ -100,7 +121,12 @@ func (s *UserModel) UpdateUser(user *UserLists) error {
 
 // func (s *UserModel) TableConfirmation() error {
 // 	logger, _ := zap.NewProduction()
-// 	defer logger.Sync()
+// 	defer func(logger *zap.Logger) {
+// err := logger.Sync()
+// if err != nil {
+// panic(err)
+// }
+// }(logger)
 // 	logger.Info("Start TableConfirmation model", zap.Time("now", time.Now()))
 // 	if !s.db.HasTable("user_list") {
 // 		logger.Info("No target table. Start to create table")

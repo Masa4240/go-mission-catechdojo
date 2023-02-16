@@ -23,7 +23,11 @@ func NewGachaController(svc *gachaservice.GachaService) *GachaController {
 // これはHandlerにあるべき、Viewの下にこれを持ってくる。Serviceの呼び出しをControllerから呼び出す.
 func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	req := gachamodel.GachaReq{}
@@ -53,7 +57,11 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 
 func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	var req = gachamodel.NewCharacterReq{}
@@ -75,7 +83,11 @@ func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 
 func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	// var res = []*model.GachaResponse{}

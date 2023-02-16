@@ -16,11 +16,11 @@ type GachaService struct {
 }
 
 var (
-	characterMasterDataMVC map[int]*gachamodel.CharacterLists //go:embed
-	srCharacters           []*gachamodel.CharacterLists       //go:embed
-	rCharacters            []*gachamodel.CharacterLists       //go:embed
-	nCharacters            []*gachamodel.CharacterLists       //go:embed
-	rankWeightMVC          map[string]int                     //go:embed
+	characterMasterDataMVC map[int]*gachamodel.CharacterLists
+	srCharacters           []*gachamodel.CharacterLists
+	rCharacters            []*gachamodel.CharacterLists
+	nCharacters            []*gachamodel.CharacterLists
+	rankWeightMVC          map[string]int
 )
 
 func NewGachaService(svc *gachamodel.GachaModel) *GachaService {
@@ -32,7 +32,11 @@ func NewGachaService(svc *gachamodel.GachaModel) *GachaService {
 // このServiceをControllerとServiceに分ける.
 func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	// Gacha
@@ -76,7 +80,11 @@ func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error)
 
 func (s *GachaService) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	var req usermodel.UserLists
@@ -94,7 +102,11 @@ func (s *GachaService) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse
 func characterGachaMVC(id int, characters []*gachamodel.CharacterLists,
 	newCharacters []*gachamodel.UserCharacterList) []*gachamodel.UserCharacterList {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	newCharacter := gachamodel.UserCharacterList{}
 	// no := rand.Intn(len(characters))
 	max := len(characters)
@@ -127,7 +139,11 @@ func resConverter(characterList []*gachamodel.UserCharacterList) []*gachamodel.G
 func (s *GachaService) AddCharacter(name, rank, desc string, weight int) error {
 	logger, _ := zap.NewProduction()
 	// charList := formalCharacterList{}
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start new char reg Process", zap.Time("now", time.Now()),
 		zap.String("Name", name), zap.String("Rank", rank), zap.String("Desc", desc), zap.Int("Weight", weight))
 	// if err := s.svc.CharacterTableCheck(ctx); err != nil {
@@ -166,7 +182,11 @@ func (s *GachaService) GetMasterData() error {
 
 func initializeMasterData() {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Initialize Master Data", zap.Time("now", time.Now()))
 	if srCharacters != nil {
 		logger.Info("Initialize sr char list", zap.Time("now", time.Now()))
