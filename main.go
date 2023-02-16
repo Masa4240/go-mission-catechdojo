@@ -10,7 +10,7 @@ import (
 	"time"
 
 	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
-	"github.com/Masa4240/go-mission-catechdojo/handler/router"
+	router "github.com/Masa4240/go-mission-catechdojo/handler"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
