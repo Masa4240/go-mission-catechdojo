@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
+	"github.com/Masa4240/go-mission-catechdojo/handler/router"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
-	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
-	"github.com/Masa4240/go-mission-catechdojo/view/router"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -64,7 +64,7 @@ func realMain() error {
 	// usermodel.NewUserModel(userDB).TableConfirmation()
 
 	// Master Data initialization
-	if err = gachaservice.NewGachaService(gachamodel.NewGachaModel(userDB)).GetMasterData(); err != nil {
+	if err = gachacontroller.NewGachaController(gachamodel.NewGachaModel(userDB)).GetMasterData(); err != nil {
 		logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
 		return err
 	}

@@ -1,4 +1,4 @@
-package gachaservice
+package gachacontroller
 
 import (
 	"math/big"
@@ -11,28 +11,33 @@ import (
 	"go.uber.org/zap"
 )
 
-type GachaService struct {
-	svc *gachamodel.GachaModel
+type GachaController struct {
+	model *gachamodel.GachaModel
 }
 
 var (
-	characterMasterDataMVC map[int]*gachamodel.CharacterLists //go:embed
-	srCharacters           []*gachamodel.CharacterLists       //go:embed
-	rCharacters            []*gachamodel.CharacterLists       //go:embed
-	nCharacters            []*gachamodel.CharacterLists       //go:embed
-	rankWeightMVC          map[string]int                     //go:embed
+	characterMasterDataMVC map[int]*gachamodel.CharacterLists
+	srCharacters           []*gachamodel.CharacterLists
+	rCharacters            []*gachamodel.CharacterLists
+	nCharacters            []*gachamodel.CharacterLists
+	rankWeightMVC          map[string]int
 )
 
-func NewGachaService(svc *gachamodel.GachaModel) *GachaService {
-	return &GachaService{
-		svc: svc,
+func NewGachaController(model *gachamodel.GachaModel) *GachaController {
+	return &GachaController{
+		model: model,
 	}
 }
 
 // このServiceをControllerとServiceに分ける.
-func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error) {
+func (c *GachaController) Gacha(id, count int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	// Gacha
@@ -65,7 +70,7 @@ func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error)
 
 	logger.Info("Gacha Finish, Start registration", zap.Time("now", time.Now()))
 	// Register to user DB
-	if err := s.svc.RegisterCharacters(newCharacters); err != nil {
+	if err := c.model.RegisterCharacters(newCharacters); err != nil {
 		logger.Info("Fail character registration", zap.Time("now", time.Now()))
 		return nil, err
 	}
@@ -74,15 +79,20 @@ func (s *GachaService) Gacha(id, count int) ([]*gachamodel.GachaResponse, error)
 	return newResCharacters, nil
 }
 
-func (s *GachaService) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse, error) {
+func (c *GachaController) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
 	var req usermodel.UserLists
 	req.ID = uint(id)
 
-	list, err := s.svc.GetCharaterList(&req)
+	list, err := c.model.GetCharaterList(&req)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +104,12 @@ func (s *GachaService) GetUserCharacterList(id int) ([]*gachamodel.GachaResponse
 func characterGachaMVC(id int, characters []*gachamodel.CharacterLists,
 	newCharacters []*gachamodel.UserCharacterList) []*gachamodel.UserCharacterList {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	newCharacter := gachamodel.UserCharacterList{}
 	// no := rand.Intn(len(characters))
 	max := len(characters)
@@ -124,10 +139,16 @@ func resConverter(characterList []*gachamodel.UserCharacterList) []*gachamodel.G
 	return resCharacters
 }
 
-func (s *GachaService) AddCharacter(name, rank, desc string, weight int) error {
+func (c *GachaController) AddCharacter(name, rank, desc string, weight int) error {
 	logger, _ := zap.NewProduction()
 	// charList := formalCharacterList{}
-	defer logger.Sync()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start new char reg Process", zap.Time("now", time.Now()),
 		zap.String("Name", name), zap.String("Rank", rank), zap.String("Desc", desc), zap.Int("Weight", weight))
 	// if err := s.svc.CharacterTableCheck(ctx); err != nil {
@@ -139,25 +160,25 @@ func (s *GachaService) AddCharacter(name, rank, desc string, weight int) error {
 	newCharacter.Rank = rank
 	newCharacter.Desc = desc
 	newCharacter.Weight = weight
-	if err := s.svc.AddNewCharacter(&newCharacter); err != nil {
+	if err := c.model.AddNewCharacter(&newCharacter); err != nil {
 		return err
 	}
 	// Update master data
-	if err := s.GetMasterData(); err != nil {
+	if err := c.GetMasterData(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *GachaService) GetMasterData() error {
+func (c *GachaController) GetMasterData() error {
 	// masterCharacters := []*model.CharacterLists{}
 	initializeMasterData()
 
-	if err := s.getCharacterMasterData(); err != nil {
+	if err := c.getCharacterMasterData(); err != nil {
 		return err
 	}
 
-	if err := s.getRankMasterData(); err != nil {
+	if err := c.getRankMasterData(); err != nil {
 		return err
 	}
 
@@ -182,8 +203,8 @@ func initializeMasterData() {
 	}
 }
 
-func (s *GachaService) getCharacterMasterData() error {
-	masterCharacters, err := s.svc.GetForamalCharacterList()
+func (c *GachaController) getCharacterMasterData() error {
+	masterCharacters, err := c.model.GetForamalCharacterList()
 	if err != nil {
 		return err
 	}
@@ -210,8 +231,8 @@ func (s *GachaService) getCharacterMasterData() error {
 	return nil
 }
 
-func (s *GachaService) getRankMasterData() error {
-	rankRatio, err := s.svc.GetRankRatio()
+func (c *GachaController) getRankMasterData() error {
+	rankRatio, err := c.model.GetRankRatio()
 	if err != nil {
 		return err
 	}

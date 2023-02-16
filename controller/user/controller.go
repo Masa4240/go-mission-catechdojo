@@ -1,4 +1,4 @@
-package userservice
+package usercontroller
 
 import (
 	"errors"
@@ -10,29 +10,34 @@ import (
 	"go.uber.org/zap"
 )
 
-type UserService struct {
-	svc *usermodel.UserModel
+type UserContoroller struct {
+	model *usermodel.UserModel
 }
 
-func NewUserService(svc *usermodel.UserModel) *UserService {
-	return &UserService{
-		svc: svc,
+func NewUserController(model *usermodel.UserModel) *UserContoroller {
+	return &UserContoroller{
+		model: model,
 	}
 }
 
-func (s *UserService) CreateUserService(newName string) (*string, error) {
+func (c *UserContoroller) CreateUserService(newName string) (*string, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()), zap.String("new name is", newName))
 
-	if err := s.nameValidation(newName); err != nil {
+	if err := c.nameValidation(newName); err != nil {
 		logger.Info("Wrong Name", zap.Time("now", time.Now()), zap.String("new name is", newName))
 		return nil, err
 	}
 	var newUser usermodel.UserLists
 	newUser.Name = newName
 
-	res, err := s.svc.CreateUser(&newUser)
+	res, err := c.model.CreateUser(&newUser)
 	if err != nil {
 		return nil, err
 	}
@@ -50,14 +55,19 @@ func (s *UserService) CreateUserService(newName string) (*string, error) {
 	return &tokenString, nil
 }
 
-func (s *UserService) GetUserService(reqID int) (*string, error) {
+func (c *UserContoroller) GetUserService(reqID int) (*string, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start to get User name", zap.Time("now", time.Now()), zap.Int("Requested ID", reqID))
 	var user usermodel.UserLists
 	user.ID = uint(reqID)
 
-	res, err := s.svc.GetUserByID(&user)
+	res, err := c.model.GetUserByID(&user)
 	if err != nil {
 		logger.Info("ID not found", zap.Time("now", time.Now()), zap.Int("req ID", reqID), zap.Error(err))
 		return nil, errors.New("id not found")
@@ -66,9 +76,14 @@ func (s *UserService) GetUserService(reqID int) (*string, error) {
 	return &res.Name, nil
 }
 
-func (s *UserService) UpdateUserService(newName string, reqID int) error {
+func (s *UserContoroller) UpdateUserService(newName string, reqID int) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	if err := s.nameValidation(newName); err != nil {
 		logger.Info("Wrong Name", zap.Time("now", time.Now()), zap.String("new name is", newName))
 		return err
@@ -79,7 +94,7 @@ func (s *UserService) UpdateUserService(newName string, reqID int) error {
 
 	// tx := s.db.Begin()
 	// 	tx := s.db.Lock()をSelectするタイミングで呼ぶ必要がある.
-	if err := s.svc.UpdateUser(&userInfo); err != nil {
+	if err := s.model.UpdateUser(&userInfo); err != nil {
 		logger.Info("Fail to update new DB", zap.Time("now", time.Now()), zap.String("name", newName), zap.Int("id", reqID))
 		return errors.New("fail to confirm new db")
 		//	tx.Rollback()
@@ -89,7 +104,7 @@ func (s *UserService) UpdateUserService(newName string, reqID int) error {
 	return nil
 }
 
-func (s *UserService) nameValidation(newName string) error {
+func (c *UserContoroller) nameValidation(newName string) error {
 	if len(newName) == 0 {
 		err := errors.New("null name")
 		return err
@@ -102,7 +117,7 @@ func (s *UserService) nameValidation(newName string) error {
 	// Duplication check
 	var user usermodel.UserLists
 	user.Name = newName
-	res, err := s.svc.GetUserByName(&user)
+	res, err := c.model.GetUserByName(&user)
 	if err != nil {
 		return errors.New("fail to get user from db")
 		// return err

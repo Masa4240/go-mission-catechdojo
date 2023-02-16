@@ -1,29 +1,34 @@
-package gachacontroller
+package gachahandler
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
+	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
-	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	"go.uber.org/zap"
 )
 
-type GachaController struct {
-	svc *gachaservice.GachaService
+type GachaHandler struct {
+	ctrl *gachacontroller.GachaController
 }
 
-func NewGachaController(svc *gachaservice.GachaService) *GachaController {
-	return &GachaController{
-		svc: svc,
+func NewGachaHandler(ctrl *gachacontroller.GachaController) *GachaHandler {
+	return &GachaHandler{
+		ctrl: ctrl,
 	}
 }
 
 // これはHandlerにあるべき、Viewの下にこれを持ってくる。Serviceの呼び出しをControllerから呼び出す.
-func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
+func (h *GachaHandler) Gacha(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	req := gachamodel.GachaReq{}
@@ -35,7 +40,7 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.svc.Gacha(int(r.Context().Value("id").(int64)), req.Times)
+	res, err := h.ctrl.Gacha(int(r.Context().Value("id").(int64)), req.Times)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
@@ -51,9 +56,14 @@ func (h *GachaController) Gacha(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Finish Gacha process", zap.Time("now", time.Now()))
 }
 
-func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
+func (h *GachaHandler) AddCharacter(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	var req = gachamodel.NewCharacterReq{}
@@ -62,7 +72,7 @@ func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err := h.svc.AddCharacter(req.Name, req.Rank, req.Desc, req.Weight)
+	err := h.ctrl.AddCharacter(req.Name, req.Rank, req.Desc, req.Weight)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -73,9 +83,14 @@ func (h *GachaController) AddCharacter(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Finish Gacha process", zap.Time("now", time.Now()))
 }
 
-func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Request) {
+func (h *GachaHandler) GetCharacterList(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}(logger)
 	logger.Info("Start Gacha process", zap.Time("now", time.Now()))
 
 	// var res = []*model.GachaResponse{}
@@ -83,7 +98,7 @@ func (h *GachaController) GetCharacterList(w http.ResponseWriter, r *http.Reques
 	// if !ok {
 	// 	return
 	// }
-	res, err := h.svc.GetUserCharacterList(id)
+	res, err := h.ctrl.GetUserCharacterList(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		logger.Info("Error in create user", zap.Time("now", time.Now()))
