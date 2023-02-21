@@ -9,10 +9,12 @@ import (
 	userhandler "github.com/Masa4240/go-mission-catechdojo/handler/user"
 	"github.com/Masa4240/go-mission-catechdojo/middleware"
 	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
+	userservice "github.com/Masa4240/go-mission-catechdojo/service/user"
 
 	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	gachahandler "github.com/Masa4240/go-mission-catechdojo/handler/gacha"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
+	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	"github.com/go-chi/chi"
 )
 
@@ -22,8 +24,8 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 	r.Use(middleware.Recovery)
 
 	userModel := usermodel.NewUserModel(userDB)
-	// userService := userservice.NewUserService(userModel)
-	userCtrl := usercontroller.NewUserController(userModel)
+	userService := userservice.NewUserService(userModel)
+	userCtrl := usercontroller.NewUserController(userService)
 	userHandler := userhandler.NewUserHandler(userCtrl)
 
 	r.Route("/user", func(r chi.Router) {
@@ -36,8 +38,8 @@ func NewRouter(userDB *gorm.DB) http.Handler {
 	})
 
 	gachaModel := gachamodel.NewGachaModel(userDB)
-	// userService := userservice.NewUserService(userModel)
-	gachaCtrl := gachacontroller.NewGachaController(gachaModel)
+	gachaService := gachaservice.NewGachaService(gachaModel)
+	gachaCtrl := gachacontroller.NewGachaController(gachaService)
 	gachaHandler := gachahandler.NewGachaHandler(gachaCtrl)
 
 	r.Route("/gacha", func(r chi.Router) {

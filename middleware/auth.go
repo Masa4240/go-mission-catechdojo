@@ -17,7 +17,12 @@ type Auth struct {
 
 func TokenValidation(h http.Handler) http.Handler {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 	logger.Info("Start token validation", zap.Time("now", time.Now()))
 
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -44,21 +49,19 @@ func TokenValidation(h http.Handler) http.Handler {
 		logger.Info("Decode Done", zap.Time("now", time.Now()),
 			zap.String("Name", dectoken.Name), zap.Int64("ID", dectoken.ID))
 
-		type key int
-
-		const (
-			id key = iota
-		)
-
-		// id := "id"
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), id, dectoken.ID)))
+		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "id", dectoken.ID)))
 	}
 	return http.HandlerFunc(fn)
 }
 
 func parse(signedString string) (*Auth, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 
 	token, err := jwt.Parse(signedString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

@@ -11,11 +11,11 @@ import (
 )
 
 type UserHandler struct {
-	ctrl *usercontroller.UserContoroller
+	ctrl *usercontroller.UserController
 }
 
 // NewHealthzHandler returns HealthzHandler based http.Handler.
-func NewUserHandler(ctrl *usercontroller.UserContoroller) *UserHandler {
+func NewUserHandler(ctrl *usercontroller.UserController) *UserHandler {
 	return &UserHandler{
 		ctrl: ctrl,
 	}
@@ -26,7 +26,8 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()
 		if err != nil {
-			panic(err)
+			// fmt.Println(err)
+			return
 		}
 	}(logger)
 	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
@@ -57,7 +58,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()
 		if err != nil {
-			panic(err)
+			return
 		}
 	}(logger)
 	logger.Info("Start Get User Process in service", zap.Time("now", time.Now()))
@@ -71,7 +72,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	name, err := h.ctrl.GetUserService(int(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		logger.Info("Error in create user", zap.Time("now", time.Now()))
+		logger.Info("Error in create user", zap.Time("now", time.Now()), zap.Error(err))
 		return
 	}
 	res.Name = *name
@@ -88,7 +89,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()
 		if err != nil {
-			panic(err)
+			return
 		}
 	}(logger)
 	logger.Info("Start update User Process in controller", zap.Time("now", time.Now()))

@@ -20,60 +20,85 @@ func NewUserModel(db *gorm.DB) *UserModel {
 
 func (s *UserModel) CreateUser(newUser *UserLists) (*UserLists, error) {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 	logger.Info("Start Create User Model", zap.Time("now", time.Now()), zap.String("new name is", newUser.Name))
 
 	user := *newUser
-	// newUser.Name = newName
-
-	if res := s.db.Table("user_list").Create(&user); res.Error != nil {
+	tx := s.db.Begin()
+	if res := tx.Table("user_list").Create(&user); res.Error != nil {
 		logger.Info("Start Create User Process", zap.Time("now", time.Now()), zap.Error(res.Error))
+		tx.Rollback()
 		return nil, res.Error
 	}
+	tx.Commit()
 	return &user, nil
 }
 
 func (s *UserModel) GetUserByID(user *UserLists) (*UserLists, error) {
 	userList := UserLists{}
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.Int("Requested ID", int(user.ID)))
-	if err := s.db.Table("user_list").Find(&userList, "id=?", user.ID).Error; err != nil {
+	tx := s.db.Begin()
+
+	if err := tx.Table("user_list").Find(&userList, "id=?", user.ID).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
+		tx.Rollback()
 		return nil, err
 	}
+	tx.Commit()
 	return &userList, nil
 }
 
 func (s *UserModel) GetUserByName(user *UserLists) ([]*UserLists, error) {
 	userList := []*UserLists{}
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 	logger.Info("Start to get User Model", zap.Time("now", time.Now()), zap.String("Requested ID", (user.Name)))
-	if err := s.db.Table("user_list").Find(&userList, "name=?", user.Name).Error; err != nil {
+	tx := s.db.Begin()
+
+	if err := tx.Table("user_list").Find(&userList, "name=?", user.Name).Error; err != nil {
 		logger.Info("ID Not Found", zap.Time("now", time.Now()), zap.Error(err))
+		tx.Rollback()
 		return nil, err
 	}
+	tx.Commit()
 	return userList, nil
 }
 
 func (s *UserModel) UpdateUser(user *UserLists) error {
 	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
 	logger.Info("Update User model", zap.Time("now", time.Now()))
-
-	// if err := s.db.Table("user_list").Where("id=?", user.ID).Update("name", user.Name).Error; err != nil {
-	// 	logger.Info("Fail to update DB", zap.Time("now", time.Now()),
-	// 		zap.String("name", user.Name), zap.Int("id", int(user.ID)), zap.Error(err))
-	// 	err := errors.New("fail update db")
-	// 	return err
-	// }
-	if err := s.db.Table("user_list").Updates(&user).Error; err != nil {
+	tx := s.db.Begin()
+	tx.Lock()
+	if err := tx.Table("user_list").Where("id=?", user.ID).Updates(&user).Error; err != nil {
 		logger.Info("Fail to update DB", zap.Time("now", time.Now()),
 			zap.String("name", user.Name), zap.Int("id", int(user.ID)), zap.Error(err))
+		tx.Rollback()
 		return errors.New("fail update db")
-		// return err
 	}
+	tx.Commit()
 	return nil
 }
 

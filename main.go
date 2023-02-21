@@ -12,6 +12,7 @@ import (
 	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	router "github.com/Masa4240/go-mission-catechdojo/handler"
 	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
+	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -60,11 +61,10 @@ func realMain() error {
 	}
 	defer userDB.Close()
 
-	// gachamodel.NewGachaModel(userDB).CharacterTableCheck()
-	// usermodel.NewUserModel(userDB).TableConfirmation()
-
 	// Master Data initialization
-	if err = gachacontroller.NewGachaController(gachamodel.NewGachaModel(userDB)).GetMasterData(); err != nil {
+
+	if err = gachacontroller.NewGachaController(gachaservice.NewGachaService(
+		gachamodel.NewGachaModel(userDB))).GetMasterData(); err != nil {
 		logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
 		return err
 	}
