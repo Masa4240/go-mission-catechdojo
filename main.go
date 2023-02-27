@@ -9,10 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	router "github.com/Masa4240/go-mission-catechdojo/handler"
-	gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
+	charactermodel "github.com/Masa4240/go-mission-catechdojo/model/character"
+	rankmodel "github.com/Masa4240/go-mission-catechdojo/model/rankratio"
+	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
+	ucmodel "github.com/Masa4240/go-mission-catechdojo/model/usercharacter"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
@@ -27,7 +30,7 @@ func main() {
 
 func realMain() error {
 	logger, _ := zap.NewDevelopment()
-	logger.Info("Hello zap", zap.String("key", "value"), zap.Time("now", time.Now()))
+	logger.Info("Start", zap.String("key", "value"), zap.Time("now", time.Now()))
 
 	// config values
 	const (
@@ -63,13 +66,25 @@ func realMain() error {
 
 	// Master Data initialization
 
-	if err = gachacontroller.NewGachaController(gachaservice.NewGachaService(
-		gachamodel.NewGachaModel(userDB))).GetMasterData(); err != nil {
+	// if err = gachacontroller.NewGachaController(gachaservice.NewGachaService(
+	// 	gachamodel.NewGachaModel(userDB)),
+	// 	logger).GetMasterData(); err != nil {
+	// 	logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
+	// 	return err
+	// }
+
+	if err := gachaservice.NewGachaService(
+		charactermodel.NewCharacterModel(userDB, logger),
+		ucmodel.NewUcModel(userDB, logger),
+		usermodel.NewUserModel(userDB, logger),
+		rankmodel.NewRankModel(userDB, logger),
+		logger,
+	).InitMasterData(); err != nil {
 		logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
 		return err
 	}
-	// Monster Lists
-	mux := router.NewRouter(userDB)
+
+	mux := router.NewRouter(userDB, logger)
 	const serverTimeout = 10
 	srv := &http.Server{
 		Addr:              defaultPort,

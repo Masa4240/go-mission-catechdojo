@@ -31,12 +31,13 @@ services:
       # POSTGRES_PASSWORD: 'postgres'
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
-      - db-data:/var/lib/mysql
-      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./MySQL:/docker-entrypoint-initdb.d/
+      # - db-data:/var/lib/mysql
+      - ./MySQL/my.cnf:/etc/mysql/conf.d/my.cnf
     ports:
       - 3306:3306
 
 
-volumes:
-  db-data:
-    driver: local
+# volumes:
+#   db-data:
+#     driver: local

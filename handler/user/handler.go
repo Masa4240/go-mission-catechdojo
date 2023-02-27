@@ -6,98 +6,78 @@ import (
 	"time"
 
 	usercontroller "github.com/Masa4240/go-mission-catechdojo/controller/user"
-	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
 	"go.uber.org/zap"
 )
 
 type UserHandler struct {
-	ctrl *usercontroller.UserController
+	ctrl   *usercontroller.UserController
+	logger *zap.Logger
 }
 
-// NewHealthzHandler returns HealthzHandler based http.Handler.
-func NewUserHandler(ctrl *usercontroller.UserController) *UserHandler {
+func NewUserHandler(
+	ctrl *usercontroller.UserController,
+	logger *zap.Logger,
+) *UserHandler {
 	return &UserHandler{
-		ctrl: ctrl,
+		ctrl:   ctrl,
+		logger: logger,
 	}
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	logger, _ := zap.NewProduction()
-	defer func(logger *zap.Logger) {
-		err := logger.Sync()
-		if err != nil {
-			// fmt.Println(err)
-			return
-		}
-	}(logger)
-	logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
-	var req = usermodel.UserResistrationRequest{}
-	var resp = usermodel.UserResistrationResponse{}
+	h.logger.Info("Start Create User Process in service", zap.Time("now", time.Now()))
+	var req = usercontroller.UserResistrationRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.logger.Info("Decode Error", zap.Time("now", time.Now()), zap.Error(err))
 		return
 	}
-	userinfo, err := h.ctrl.CreateUserService(req.Name)
+	res, err := h.ctrl.CreateUser(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		logger.Info("Error in create user", zap.Time("now", time.Now()))
+		h.logger.Info("Error in create user", zap.Time("now", time.Now()), zap.Error(err))
 		return
 	}
-	resp.Token = *userinfo
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(&resp); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	logger.Info("Finish Create User process", zap.Time("now", time.Now()))
-}
-
-func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	logger, _ := zap.NewProduction()
-	defer func(logger *zap.Logger) {
-		err := logger.Sync()
-		if err != nil {
-			return
-		}
-	}(logger)
-	logger.Info("Start Get User Process in service", zap.Time("now", time.Now()))
-	var res = usermodel.UserGetResponse{}
-	id, ok := r.Context().Value("id").(int64)
-	if !ok {
-		logger.Info("Fail to get id from header", zap.Time("now", time.Now()), zap.Int64("id", id))
-		return
-	}
-
-	name, err := h.ctrl.GetUserService(int(id))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Info("Error in create user", zap.Time("now", time.Now()), zap.Error(err))
-		return
-	}
-	res.Name = *name
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&res); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		h.logger.Info("Error in controller", zap.Time("now", time.Now()), zap.Error(err))
 		return
 	}
-	logger.Info("Finish Create User process", zap.Time("now", time.Now()))
+	h.logger.Info("Finish Create User process", zap.Time("now", time.Now()))
+}
+
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Start Get User Process in handler", zap.Time("now", time.Now()))
+	id, ok := r.Context().Value("id").(int64)
+	if !ok {
+		h.logger.Info("Fail to get id from header", zap.Time("now", time.Now()), zap.Int64("id", id))
+		return
+	}
+	var req usercontroller.UserGetRequest
+	req.ID = id
+	res, err := h.ctrl.GetUser(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		h.logger.Info("Error in get user", zap.Time("now", time.Now()), zap.Error(err))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(&res); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.logger.Info("Error in controller", zap.Time("now", time.Now()), zap.Error(err))
+		return
+	}
+	h.logger.Info("Finish Get User process", zap.Time("now", time.Now()))
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	logger, _ := zap.NewProduction()
-	defer func(logger *zap.Logger) {
-		err := logger.Sync()
-		if err != nil {
-			return
-		}
-	}(logger)
-	logger.Info("Start update User Process in controller", zap.Time("now", time.Now()))
-
-	var req = usermodel.UserUpdateRequest{}
+	h.logger.Info("Start update User Process in handler", zap.Time("now", time.Now()))
+	var req = usercontroller.UserUpdateRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		logger.Info("Decode error", zap.Time("now", time.Now()))
+		h.logger.Info("Decode error", zap.Time("now", time.Now()), zap.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -105,11 +85,12 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	req.ID = id
 
-	if err := h.ctrl.UpdateUserService(req.Newname, int(id)); err != nil {
+	if err := h.ctrl.UpdateUserService(req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		logger.Info("Error in service", zap.Time("now", time.Now()))
+		h.logger.Info("Error in controller", zap.Time("now", time.Now()), zap.Error(err))
 		return
 	}
-	logger.Info("Finish update User Process in controller", zap.Time("now", time.Now()))
+	h.logger.Info("Finish update User Process in handler", zap.Time("now", time.Now()))
 }
