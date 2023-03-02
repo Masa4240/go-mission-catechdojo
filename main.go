@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -30,6 +31,12 @@ func main() {
 
 func realMain() error {
 	logger, _ := zap.NewDevelopment()
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			logger.Info("zap err")
+			fmt.Println(err)
+		}
+	}(logger)
 	logger.Info("Start", zap.String("key", "value"), zap.Time("now", time.Now()))
 
 	// config values
@@ -65,14 +72,6 @@ func realMain() error {
 	defer userDB.Close()
 
 	// Master Data initialization
-
-	// if err = gachacontroller.NewGachaController(gachaservice.NewGachaService(
-	// 	gachamodel.NewGachaModel(userDB)),
-	// 	logger).GetMasterData(); err != nil {
-	// 	logger.Info("Fail to get master data", zap.Time("now", time.Now()), zap.Error(err))
-	// 	return err
-	// }
-
 	if err := gachaservice.NewGachaService(
 		charactermodel.NewCharacterModel(userDB, logger),
 		ucmodel.NewUcModel(userDB, logger),

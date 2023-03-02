@@ -66,6 +66,10 @@ func GetCharacterByID(data CharacterData) CharacterData {
 	return CharacterMasterData[data.CharacterID]
 }
 
+func GetCharacterNameyID(id int) string {
+	return CharacterMasterData[id].Name
+}
+
 func GetSRCharacters() []*CharacterData {
 	return srCharacters
 }
@@ -74,5 +78,15 @@ func GetRCharacters() []*CharacterData {
 	return rCharacters
 }
 func GetNCharacters() []*CharacterData {
+	return nCharacters
+}
+
+func GetCharacters(rank string) []*CharacterData {
+	if rank == "SR" {
+		return srCharacters
+	}
+	if rank == "R" {
+		return rCharacters
+	}
 	return nCharacters
 }

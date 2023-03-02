@@ -17,9 +17,7 @@ import (
 	uccontroller "github.com/Masa4240/go-mission-catechdojo/controller/usercharacter"
 	uchandler "github.com/Masa4240/go-mission-catechdojo/handler/usercharacter"
 	ucmodel "github.com/Masa4240/go-mission-catechdojo/model/usercharacter"
-	ucservice "github.com/Masa4240/go-mission-catechdojo/service/usercharacter"
 
-	// gachamodel "github.com/Masa4240/go-mission-catechdojo/model/gacha"
 	gachacontroller "github.com/Masa4240/go-mission-catechdojo/controller/gacha"
 	gachahandler "github.com/Masa4240/go-mission-catechdojo/handler/gacha"
 	gachaservice "github.com/Masa4240/go-mission-catechdojo/service/gacha"
@@ -32,8 +30,9 @@ func NewRouter(userDB *gorm.DB, logger *zap.Logger) http.Handler {
 
 	r.Use(middleware.Recovery)
 
+	ucModel := ucmodel.NewUcModel(userDB, logger)
 	userModel := usermodel.NewUserModel(userDB, logger)
-	userService := userservice.NewUserService(userModel, logger)
+	userService := userservice.NewUserService(ucModel, userModel, logger)
 	userCtrl := usercontroller.NewUserController(userService, logger)
 	userHandler := userhandler.NewUserHandler(userCtrl, logger)
 
@@ -46,9 +45,8 @@ func NewRouter(userDB *gorm.DB, logger *zap.Logger) http.Handler {
 		})
 	})
 
-	ucModel := ucmodel.NewUcModel(userDB, logger)
-	ucService := ucservice.NewUcService(ucModel, logger)
-	ucCtrl := uccontroller.NewUcController(ucService, logger)
+	// ucService := ucservice.NewUcService(ucModel, logger)
+	ucCtrl := uccontroller.NewUcController(userService, logger)
 	ucHandler := uchandler.NewUcHandler(ucCtrl, logger)
 
 	r.Route("/character", func(r chi.Router) {

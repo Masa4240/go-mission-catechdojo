@@ -3,7 +3,6 @@ package ucmodel
 import (
 	"time"
 
-	charactermodel "github.com/Masa4240/go-mission-catechdojo/model/character"
 	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
 
 	"github.com/jinzhu/gorm"
@@ -22,11 +21,11 @@ func NewUcModel(db *gorm.DB, logger *zap.Logger) *UcModel {
 	}
 }
 
-func (m *UcModel) GetCharaterList(user *usermodel.UserList) ([]*charactermodel.CharacterData, error) {
+func (m *UcModel) GetCharaterList(user *usermodel.UserList) ([]*UserCharacterList, error) {
 	m.logger.Info("Start Gacha Process", zap.Time("now", time.Now()))
 
-	var res []*charactermodel.CharacterData
-	var tempres []charactermodel.CharacterData
+	var res []*UserCharacterList
+	var tempres []UserCharacterList
 	tableName := "user_characterlist"
 	tx := m.db.Begin()
 	if err := tx.Table(tableName).Where("`user_id` = ?", user.ID).Find(&res).Error; err != nil {
