@@ -32,6 +32,6 @@ func (c *GachaController) Gacha(req GachaReq) ([]*GachaResponse, error) {
 		c.logger.Info("Error in service", zap.Time("now", time.Now()), zap.Error(err))
 		return nil, err
 	}
-	res := convertToGachaResponse(*result)
-	return res, nil
+	// res := convertToGachaResponse(*result)
+	return convertToGachaResponse(*result), nil
 }

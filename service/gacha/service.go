@@ -9,10 +9,12 @@ import (
 	rankmodel "github.com/Masa4240/go-mission-catechdojo/model/rankratio"
 	usermodel "github.com/Masa4240/go-mission-catechdojo/model/user"
 	ucmodel "github.com/Masa4240/go-mission-catechdojo/model/usercharacter"
+	"github.com/jinzhu/gorm"
 	"go.uber.org/zap"
 )
 
 type GachaService struct {
+	db      *gorm.DB
 	cmodel  *charactermodel.CharacterModel
 	ucmodel *ucmodel.UcModel
 	umodel  *usermodel.UserModel
@@ -21,6 +23,7 @@ type GachaService struct {
 }
 
 func NewGachaService(
+	db *gorm.DB,
 	cmodel *charactermodel.CharacterModel,
 	ucmodel *ucmodel.UcModel,
 	umodel *usermodel.UserModel,
@@ -28,6 +31,7 @@ func NewGachaService(
 	logger *zap.Logger,
 ) *GachaService {
 	return &GachaService{
+		db:      db,
 		cmodel:  cmodel,
 		ucmodel: ucmodel,
 		umodel:  umodel,
@@ -57,20 +61,35 @@ func (s *GachaService) Gacha(req GachaRequest) (*GachaContent, error) {
 		}
 		if int(result.Int64()) < rankRatio["SR"] {
 			res, err = getCharacter("SR", res)
+			if err != nil {
+				s.logger.Info("Fail to create rand", zap.Time("now", time.Now()), zap.Error(err))
+				return nil, err
+			}
 		}
 		if int(result.Int64()) >= rankRatio["SR"] && int(result.Int64()) < rankRatio["SR"]+rankRatio["R"] {
 			res, err = getCharacter("R", res)
+			if err != nil {
+				s.logger.Info("Fail to create rand", zap.Time("now", time.Now()), zap.Error(err))
+				return nil, err
+			}
 		}
 		if int(result.Int64()) >= rankRatio["SR"]+rankRatio["R"] {
 			res, err = getCharacter("N", res)
+			if err != nil {
+				s.logger.Info("Fail to create rand", zap.Time("now", time.Now()), zap.Error(err))
+				return nil, err
+			}
 		}
 	}
-	newCharacters := convertToUserCharacter(res)
 
 	// 2. Register Gacha result
-	if err := s.ucmodel.RegisterCharacters(newCharacters); err != nil {
+	newCharacters := convertToUserCharacter(res)
+	tx := s.db.Begin()
+	if err := s.ucmodel.RegisterCharacters(tx, newCharacters); err != nil {
+		tx.Rollback()
 		return nil, err
 	}
+	tx.Commit()
 	return &res, nil
 }
 

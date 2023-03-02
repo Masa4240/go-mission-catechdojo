@@ -73,9 +73,10 @@ func realMain() error {
 
 	// Master Data initialization
 	if err := gachaservice.NewGachaService(
+		userDB,
 		charactermodel.NewCharacterModel(userDB, logger),
-		ucmodel.NewUcModel(userDB, logger),
-		usermodel.NewUserModel(userDB, logger),
+		ucmodel.NewUcModel(logger),
+		usermodel.NewUserModel(logger),
 		rankmodel.NewRankModel(userDB, logger),
 		logger,
 	).InitMasterData(); err != nil {

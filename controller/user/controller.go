@@ -50,22 +50,30 @@ func (c *UserController) CreateUser(req UserResistrationRequest) (*UserResistrat
 
 func (c *UserController) GetUser(req UserGetRequest) (*UserGetResponse, error) {
 	c.logger.Info("Start to get User name in Controller", zap.Time("now", time.Now()), zap.Int64("Requested ID", req.ID))
-	info := userservice.UserInfo{
-		Profile: &userservice.UserProfile{
-			ID: int(req.ID),
-		},
-		Characters: nil,
-	}
-	res, err := c.svc.GetUserByID(info)
+	// info := userservice.UserInfo{
+	// 	Profile: &userservice.UserProfile{
+	// 		ID: int(req.ID),
+	// 	},
+	// 	Characters: nil,
+	// }
+	res, err := c.svc.GetUserByID(
+		userservice.UserInfo{
+			Profile: &userservice.UserProfile{
+				ID: int(req.ID),
+			},
+			Characters: nil,
+		})
 	if err != nil {
 		c.logger.Info("ID not found", zap.Time("now", time.Now()), zap.Int64("req ID", req.ID), zap.Error(err))
 		return nil, errors.New("id not found")
 	}
-	response := UserGetResponse{
-		Name: res.Profile.Name,
-	}
+	// response := UserGetResponse{
+	// 	Name: res.Profile.Name,
+	// }
 	// response.Name = res.Name
-	return &response, nil
+	return &UserGetResponse{
+		Name: res.Profile.Name,
+	}, nil
 }
 
 func (c *UserController) UpdateUserService(req UserUpdateRequest) error {

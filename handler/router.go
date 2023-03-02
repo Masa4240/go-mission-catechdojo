@@ -30,9 +30,9 @@ func NewRouter(userDB *gorm.DB, logger *zap.Logger) http.Handler {
 
 	r.Use(middleware.Recovery)
 
-	ucModel := ucmodel.NewUcModel(userDB, logger)
-	userModel := usermodel.NewUserModel(userDB, logger)
-	userService := userservice.NewUserService(ucModel, userModel, logger)
+	ucModel := ucmodel.NewUcModel(logger)
+	userModel := usermodel.NewUserModel(logger)
+	userService := userservice.NewUserService(userDB, ucModel, userModel, logger)
 	userCtrl := usercontroller.NewUserController(userService, logger)
 	userHandler := userhandler.NewUserHandler(userCtrl, logger)
 
@@ -56,7 +56,7 @@ func NewRouter(userDB *gorm.DB, logger *zap.Logger) http.Handler {
 	cModel := charactermodel.NewCharacterModel(userDB, logger)
 	rModel := rankmodel.NewRankModel(userDB, logger)
 
-	gachaService := gachaservice.NewGachaService(cModel, ucModel, userModel, rModel, logger)
+	gachaService := gachaservice.NewGachaService(userDB, cModel, ucModel, userModel, rModel, logger)
 	gachaCtrl := gachacontroller.NewGachaController(gachaService, logger)
 	gachaHandler := gachahandler.NewGachaHandler(gachaCtrl, logger)
 
